@@ -3,25 +3,39 @@ pragma solidity 0.8.18;
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+
 contract ScpiNFT is ERC1155, Ownable {
-     using Counters for Counters.Counter;
-     Counters.Counter private _tokenIds;
-     mapping(uint256 => string) private _tokenURIs;
-     constructor() ERC1155("") {}
-     function _setTokenURI(uint256 tokenId, string memory _tokenURI)
-     internal
-     virtual
-     {
+    using Counters for Counters.Counter;
+    Counters.Counter private _tokenIds;
+
+    mapping(uint256 => string) private _tokenURIs;
+
+    constructor() ERC1155("") {}
+
+    function _setTokenURI(
+        uint256 tokenId,
+        string memory _tokenURI
+    ) internal virtual {
         _tokenURIs[tokenId] = _tokenURI;
-     }
-     function mintNFT(address recipient, string memory _tokenURI)
-     public onlyOwner
-     returns (uint256)
-     {
-       _tokenIds.increment();
-       uint256 newItemId = _tokenIds.current();
-       _mint(recipient, newItemId, 1, "");
-       _setTokenURI(newItemId, _tokenURI);
-       return newItemId;
-     }
+    }
+
+    function registerNewCompany(
+        address recipient,
+        uint256 sharesAmount,
+        string memory _tokenURI
+    ) public onlyOwner returns (uint256) {
+        _tokenIds.increment();
+        uint256 newItemId = _tokenIds.current();
+        _mint(recipient, newItemId, sharesAmount, "");
+        _setTokenURI(newItemId, _tokenURI);
+        emit RegisterNewCompany(newItemId);
+        return newItemId;
+    }
+
+    function uri(uint256 tokenId) public view override returns (string memory) {
+        return _tokenURIs[tokenId];
+    }
+
+    /* Events */
+    event RegisterNewCompany(uint256 companyId);
 }
