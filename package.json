@@ -4,7 +4,13 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "npm hardhat:compile",
+    "hardhat:node": "hardhat node",
+    "hardhat:compile": "hardhat compile",
+    "hardhat:deploy:localhost": "hardhat run scripts/deploy.js --network localhost",
+    "hardhat:deploy:mumbai": "hardhat run scripts/deploy.js --network mumbai",
+    "hardhat:test": "hardhat test test/hardhat.js",
+    "hardhat:coverage": "hardhat coverage"
   },
   "repository": {
     "type": "git",
