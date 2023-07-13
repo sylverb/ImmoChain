@@ -1,4 +1,4 @@
-import { createCampaign, dashboard, logout, payment, profile, withdraw } from '../assets';
+import { registerScpi, dashboard, logout, payment, profile, withdraw } from '../assets';
 
 export const navlinks = [
   {
@@ -8,8 +8,8 @@ export const navlinks = [
   },
   {
     name: 'campaign',
-    imgUrl: createCampaign,
-    link: '/create-campaign',
+    imgUrl: registerScpi,
+    link: '/register-scpi',
   },
 /*  {
     name: 'payment',

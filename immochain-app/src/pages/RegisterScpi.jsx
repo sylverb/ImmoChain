@@ -7,10 +7,9 @@ import { money } from '../assets';
 import { CustomButton, FormField, Loader } from '../components';
 import { checkIfImage } from '../utils';
 
-const CreateCampaign = () => {
+const RegisterScpi = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
-  const { createCampaign } = useStateContext();
   const { createScpi } = useStateContext();
   const [form, setForm] = useState({
     name: '',
@@ -31,7 +30,7 @@ const CreateCampaign = () => {
         setIsLoading(true)
         await createScpi({ ...form})
         setIsLoading(false);
-//        navigate('/');
+        navigate('/');
       } else {
         alert('Provide valid image URL')
         setForm({ ...form, image: '' });
@@ -94,4 +93,4 @@ const CreateCampaign = () => {
   )
 }
 
-export default CreateCampaign
+export default RegisterScpi

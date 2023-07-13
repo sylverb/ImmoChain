@@ -104,7 +104,6 @@ export const StateContextProvider = ({ children }) => {
         address,
         contract,
         connect,
-        createCampaign: publishCampaign,
         createScpi,
         getScpiInfos,
         getUserCampaigns,
