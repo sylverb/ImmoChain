@@ -54,7 +54,7 @@ contract ScpiNFT is ERC1155, Ownable {
     }
 
     /**
-     * @dev     Create a new SCPI with wanted amount of shares, and send them to specified recipient
+     * @dev     Register a new SCPI with wanted amount of shares, and send them to specified recipient
      *          The URI for this SCPI is also specified here.
      * @param   _recipient  .
      * @param   _scpiName  .
