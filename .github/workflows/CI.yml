@@ -3,6 +3,10 @@
 
 name: "Continuous Integration"
 
+env:
+  API_URL: "https://polygon-mumbai.g.alchemy.com/v2/"
+  PRIVATE_KEY: "1111111111111111111111111111111111111111111111111111111111111111"
+
 on:
   push:
     branches: [ "main" ]
