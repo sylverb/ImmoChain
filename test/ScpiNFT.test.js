@@ -27,13 +27,13 @@ describe("Test ScpiNFT", function() {
         })
 
         it('shall register one company with expected number of items', async function() {
-            const findEvent = await scpiNft.registerNewCompany(addr1.address,10000,"URI")
+            const findEvent = await scpiNft.registerNewScpi(addr1.address,'SCPI 1',10000,'URI',99)
 
-            // Check receiving RegisterNewCompany event
+            // Check receiving registerNewScpi event
             await expect(findEvent)
             .to.emit(
                 scpiNft, 
-                'RegisterNewCompany'
+                'RegisterNewScpi'
             )
             .withArgs(
                 1
@@ -44,25 +44,25 @@ describe("Test ScpiNFT", function() {
         })
 
         it('shall register two companies with expected number of items and correct URI', async function() {
-            var findEvent = await scpiNft.registerNewCompany(addr1.address,10000,"URI1")
+            var findEvent = await scpiNft.registerNewScpi(addr1.address,'SCPI 1',10000,'URI1',99)
 
-            // Check receiving RegisterNewCompany event
+            // Check receiving registerNewScpi event
             await expect(findEvent)
             .to.emit(
                 scpiNft, 
-                'RegisterNewCompany'
+                'RegisterNewScpi'
             )
             .withArgs(
                 1
             )
 
-            findEvent = await scpiNft.registerNewCompany(addr2.address,99999,"URI2")
+            findEvent = await scpiNft.registerNewScpi(addr2.address,'SCPI 2',99999,'URI2',108)
 
-            // Check receiving RegisterNewCompany event
+            // Check receiving registerNewScpi event
             await expect(findEvent)
             .to.emit(
                 scpiNft, 
-                'RegisterNewCompany'
+                'RegisterNewScpi'
             )
             .withArgs(
                 2
