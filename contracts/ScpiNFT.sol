@@ -125,6 +125,17 @@ contract ScpiNFT is ERC1155, Ownable {
         return _scpiInfos[tokenId].uri;
     }
 
+    /**
+     * @dev     We override safeTransferFrom to take into account our specificities :
+     *          - marketplace shall be able to transfer from any address to any other address
+     *          - scpi shall be able to send the tokens it owns to any address
+     *          This function will allow to transfer one SCPI tokens from an address to another.
+     * @param   from   send tokens from this address
+     * @param   to     send tokens to this address
+     * @param   id     id of the scpi
+     * @param   amount amount of token to send
+     * @param   data   data
+     */
     function safeTransferFrom(
         address from,
         address to,
@@ -132,8 +143,7 @@ contract ScpiNFT is ERC1155, Ownable {
         uint256 amount,
         bytes memory data
     ) public override {
-        require(msg.sender == owner() ||
-                msg.sender == _marketplaceAddress || // marketplace shall be able to transfert tokens from any address to any address
+        require(msg.sender == _marketplaceAddress || // marketplace shall be able to transfert tokens from any address to any address
                 (msg.sender == _scpiInfos[id].scpiAddress && msg.sender == from) // SCPI can only transfer shares from its wallet
                 ,"Please use Marketplace to sell your shares");
         _safeTransferFrom(from, to, id, amount, data);
