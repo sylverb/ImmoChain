@@ -57,6 +57,24 @@ export const contractAbi = [
         "internalType": "uint256",
         "name": "companyId",
         "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "name",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "publicPrice",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "uri",
+        "type": "string"
       }
     ],
     "name": "RegisterNewScpi",

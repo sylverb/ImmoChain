@@ -50,14 +50,21 @@ export const StateContextProvider = ({ children }) => {
   }
 
   const getScpiInfos = async () => {
+/*    const eventName = "RegisterNewScpi";
+    const events = await contract.events.getEvents(eventName);
+    console.log("+++getScpiInfos events = "+registerScpiEventInfo.length);
+
+    const parsedInfos = events.map((event, i) => ({
+      title: event.data.name,
+      publicPrice: event.data.publicPrice.toNumber(),
+      image: event.data.uri,
+      pId: event.data.companyId
+    }));*/
+
     const scpiInfos = await contract.call('getScpiInfos');
 
     const parsedInfos = scpiInfos.map((scpiInfo, i) => ({
       title: scpiInfo.name,
-      description: "Desc",
-      target: "5",
-      deadline: 55,
-      amountCollected: "0",
       publicPrice: scpiInfo.publicPrice.toNumber(),
       image: scpiInfo.uri,
       pId: i
@@ -96,7 +103,6 @@ export const StateContextProvider = ({ children }) => {
 
     return parsedDonations;
   }
-
 
   return (
     <StateContext.Provider
