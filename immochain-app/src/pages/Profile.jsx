@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 
-import { DisplayCampaigns } from '../components';
+import { DisplayScpi } from '../components';
 import { useStateContext } from '../context'
 
 const Profile = () => {
@@ -21,7 +21,7 @@ const Profile = () => {
   }, [address, contract]);
 
   return (
-    <DisplayCampaigns 
+    <DisplayScpi 
       title="All SCPI"
       isLoading={isLoading}
       campaigns={campaigns}

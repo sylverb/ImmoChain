@@ -4,11 +4,11 @@ import { v4 as uuidv4 } from "uuid";
 import ScpiCard from './ScpiCard';
 import { loader } from '../assets';
 
-const DisplayCampaigns = ({ title, isLoading, campaigns }) => {
+const DisplayScpi = ({ title, isLoading, campaigns }) => {
   const navigate = useNavigate();
 
   const handleNavigate = (campaign) => {
-    navigate(`/campaign-details/${campaign.title}`, { state: campaign })
+    navigate(`/scpi-shares/${campaign.title}`, { state: campaign })
   }
   
   return (
@@ -22,7 +22,7 @@ const DisplayCampaigns = ({ title, isLoading, campaigns }) => {
 
         {!isLoading && campaigns.length === 0 && (
           <p className="font-epilogue font-semibold text-[14px] leading-[30px] text-[#818183]">
-            You have not created any campaigns yet
+            No SCPI available yet
           </p>
         )}
 
@@ -36,4 +36,4 @@ const DisplayCampaigns = ({ title, isLoading, campaigns }) => {
   )
 }
 
-export default DisplayCampaigns
+export default DisplayScpi
