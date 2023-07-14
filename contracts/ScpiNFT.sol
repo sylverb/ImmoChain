@@ -152,6 +152,15 @@ contract ScpiNFT is ERC1155, Ownable {
         setApprovalForAll(_marketplaceAddress,true);
     }
 
+    function safeBatchTransferFrom(
+        address,// from,
+        address,// to,
+        uint256[] memory,// ids,
+        uint256[] memory,// amounts,
+        bytes memory // data
+    ) public virtual override {
+        require (false,"safeBatchTransferFrom not allowed");
+    }
     /* Events */
     event RegisterNewScpi(uint256 companyId, string name, uint publicPrice, string uri);
 }

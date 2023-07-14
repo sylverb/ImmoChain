@@ -361,27 +361,27 @@ export const contractAbi = [
     "inputs": [
       {
         "internalType": "address",
-        "name": "from",
+        "name": "",
         "type": "address"
       },
       {
         "internalType": "address",
-        "name": "to",
+        "name": "",
         "type": "address"
       },
       {
         "internalType": "uint256[]",
-        "name": "ids",
+        "name": "",
         "type": "uint256[]"
       },
       {
         "internalType": "uint256[]",
-        "name": "amounts",
+        "name": "",
         "type": "uint256[]"
       },
       {
         "internalType": "bytes",
-        "name": "data",
+        "name": "",
         "type": "bytes"
       }
     ],

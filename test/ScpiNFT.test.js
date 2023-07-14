@@ -112,7 +112,7 @@ describe('Test ScpiNFT', function() {
             var balanceData = await scpiNft.balanceOf(scpi1.address,1)
             expect(balanceData).to.equal(10000)
 
-            await scpiNft.connect(scpi1).safeTransferFrom(scpi1.address,addr1.address,1,6000,'0x0000000000000000000000000000000000000000')
+            await scpiNft.connect(scpi1).safeTransferFrom(scpi1.address,addr1.address,1,6000,ethers.ZeroHash)
             balanceData = await scpiNft.balanceOf(scpi1.address,1)
             expect(balanceData).to.equal(4000)
             balanceData = await scpiNft.balanceOf(addr1.address,1)
@@ -123,16 +123,20 @@ describe('Test ScpiNFT', function() {
             var balanceData = await scpiNft.balanceOf(scpi1.address,1)
             expect(balanceData).to.equal(10000)
 
-            await scpiNft.connect(scpi1).safeTransferFrom(scpi1.address,addr1.address,1,50,'0x0000000000000000000000000000000000000000')
-            await expect(scpiNft.connect(scpi1).safeTransferFrom(addr1.address,addr2.address,1,50,'0x0000000000000000000000000000000000000000')).to.be.revertedWith('Please use Marketplace to sell your shares')
+            await scpiNft.connect(scpi1).safeTransferFrom(scpi1.address,addr1.address,1,50,ethers.ZeroHash)
+            await expect(scpiNft.connect(scpi1).safeTransferFrom(addr1.address,addr2.address,1,50,ethers.ZeroHash)).to.be.revertedWith('Please use Marketplace to sell your shares')
         })
 
         it('Users shall not be able to transfert tokens directly', async function() {
             var balanceData = await scpiNft.balanceOf(scpi1.address,1)
             expect(balanceData).to.equal(10000)
 
-            await scpiNft.connect(scpi1).safeTransferFrom(scpi1.address,addr1.address,1,50,'0x0000000000000000000000000000000000000000')
-            await expect(scpiNft.connect(addr1).safeTransferFrom(addr1.address,addr2.address,1,50,'0x0000000000000000000000000000000000000000')).to.be.revertedWith('Please use Marketplace to sell your shares')
+            await scpiNft.connect(scpi1).safeTransferFrom(scpi1.address,addr1.address,1,50,ethers.ZeroHash)
+            await expect(scpiNft.connect(addr1).safeTransferFrom(addr1.address,addr2.address,1,50,ethers.ZeroHash)).to.be.revertedWith('Please use Marketplace to sell your shares')
+        })
+
+        it('safeBatchTransferFrom use is not allowed', async function() {
+            await expect(scpiNft.connect(scpi1).safeBatchTransferFrom(scpi1.address,addr1.address,[1],[50],ethers.ZeroHash)).to.be.revertedWith('safeBatchTransferFrom not allowed')
         })
 
     })
