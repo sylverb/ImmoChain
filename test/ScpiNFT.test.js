@@ -1,15 +1,15 @@
 const { ethers } = require('hardhat');
 const { expect, assert } = require('chai');
 
-describe("Test ScpiNFT", function() {
+describe('Test ScpiNFT', function() {
 
     let owner, addr1, addr2, addr3, addr4, addrNotRegistered
 
-    describe("Initialization", function() {
+    describe('Initialization', function() {
 
         beforeEach(async function() {
             [owner, addr1, addr2] = await ethers.getSigners()
-            let contract = await ethers.getContractFactory("ScpiNFT")
+            let contract = await ethers.getContractFactory('ScpiNFT')
             scpiNft = await contract.deploy()
         })
 
@@ -19,10 +19,10 @@ describe("Test ScpiNFT", function() {
         })
     })
 
-    describe("Minting", function() {
+    describe('Minting', function() {
         beforeEach(async function() {
             [owner, addr1, addr2] = await ethers.getSigners()
-            let contract = await ethers.getContractFactory("ScpiNFT")
+            let contract = await ethers.getContractFactory('ScpiNFT')
             scpiNft = await contract.deploy()
         })
 
@@ -97,5 +97,43 @@ describe("Test ScpiNFT", function() {
             expect(uriData).to.equal('URI2')
 
         })
+    })
+
+    describe('Transfert tokens', function() {
+        beforeEach(async function() {
+            [owner, scpi1, addr1, addr2] = await ethers.getSigners()
+            let contract = await ethers.getContractFactory('ScpiNFT')
+            scpiNft = await contract.deploy()
+
+            await scpiNft.registerNewScpi(scpi1.address,'SCPI 1',10000,'URI',99)
+        })
+
+        it('SCPI shall be able to transfert tokens it owns', async function() {
+            var balanceData = await scpiNft.balanceOf(scpi1.address,1)
+            expect(balanceData).to.equal(10000)
+
+            await scpiNft.connect(scpi1).safeTransferFrom(scpi1.address,addr1.address,1,6000,'0x0000000000000000000000000000000000000000')
+            balanceData = await scpiNft.balanceOf(scpi1.address,1)
+            expect(balanceData).to.equal(4000)
+            balanceData = await scpiNft.balanceOf(addr1.address,1)
+            expect(balanceData).to.equal(6000)
+        })
+
+        it('SCPI shall not be able to transfert tokens from others', async function() {
+            var balanceData = await scpiNft.balanceOf(scpi1.address,1)
+            expect(balanceData).to.equal(10000)
+
+            await scpiNft.connect(scpi1).safeTransferFrom(scpi1.address,addr1.address,1,50,'0x0000000000000000000000000000000000000000')
+            await expect(scpiNft.connect(scpi1).safeTransferFrom(addr1.address,addr2.address,1,50,'0x0000000000000000000000000000000000000000')).to.be.revertedWith('Please use Marketplace to sell your shares')
+        })
+
+        it('Users shall not be able to transfert tokens directly', async function() {
+            var balanceData = await scpiNft.balanceOf(scpi1.address,1)
+            expect(balanceData).to.equal(10000)
+
+            await scpiNft.connect(scpi1).safeTransferFrom(scpi1.address,addr1.address,1,50,'0x0000000000000000000000000000000000000000')
+            await expect(scpiNft.connect(addr1).safeTransferFrom(addr1.address,addr2.address,1,50,'0x0000000000000000000000000000000000000000')).to.be.revertedWith('Please use Marketplace to sell your shares')
+        })
+
     })
 })

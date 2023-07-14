@@ -259,6 +259,11 @@ export const contractAbi = [
             "internalType": "uint256",
             "name": "publicPrice",
             "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "scpiAddress",
+            "type": "address"
           }
         ],
         "internalType": "struct ScpiNFT.ScpiInfo[]",
@@ -432,6 +437,19 @@ export const contractAbi = [
       }
     ],
     "name": "setApprovalForAll",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_mpAddress",
+        "type": "address"
+      }
+    ],
+    "name": "setMarketplaceAdddress",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

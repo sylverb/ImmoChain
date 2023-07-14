@@ -12,18 +12,24 @@ import "@openzeppelin/contracts/access/Ownable.sol";
  */
 
 contract ScpiNFT is ERC1155, Ownable {
-    using Counters for Counters.Counter;
-    Counters.Counter private _tokenIds;
     struct ScpiInfo {
         string  name;
         string  uri;
         uint    totalShares;
         uint    publicPrice;
+        address scpiAddress;
     }
 
+    using Counters for Counters.Counter;
+    Counters.Counter private _tokenIds;
+    address _marketplaceAddress;
     mapping(uint256 => ScpiInfo) private _scpiInfos;
 
     constructor() ERC1155("") {}
+
+    function setMarketplaceAdddress(address _mpAddress) external onlyOwner {
+        _marketplaceAddress = _mpAddress;
+    }
 
     function _setScpiURI(
         uint256 tokenId,
@@ -53,6 +59,13 @@ contract ScpiNFT is ERC1155, Ownable {
         _scpiInfos[tokenId].publicPrice  = _publicPrice;
     }
 
+    function _setScpiAddress(
+        uint tokenId,
+        address _scpiAddress
+    ) internal virtual {
+        _scpiInfos[tokenId].scpiAddress  = _scpiAddress;
+    }
+
     /**
      * @dev     Register a new SCPI with wanted amount of shares, and send them to specified recipient
      *          The URI for this SCPI is also specified here.
@@ -76,6 +89,7 @@ contract ScpiNFT is ERC1155, Ownable {
         _setScpiURI(newItemId, _scpiURI);
         _setScpiName(newItemId, _scpiName);
         _setScpiPublicPrice(newItemId, _publicPrice);
+        _setScpiAddress(newItemId, _recipient);
         emit RegisterNewScpi(newItemId, _scpiName, _publicPrice, _scpiURI);
         return newItemId;
     }
@@ -109,6 +123,23 @@ contract ScpiNFT is ERC1155, Ownable {
      */
     function uri(uint256 tokenId) public view override returns (string memory) {
         return _scpiInfos[tokenId].uri;
+    }
+
+    function safeTransferFrom(
+        address from,
+        address to,
+        uint256 id,
+        uint256 amount,
+        bytes memory data
+    ) public override {
+        require(msg.sender == owner() ||
+                msg.sender == _marketplaceAddress || // marketplace shall be able to transfert tokens from any address to any address
+                (msg.sender == _scpiInfos[id].scpiAddress && msg.sender == from) // SCPI can only transfer shares from its wallet
+                ,"Please use Marketplace to sell your shares");
+        _safeTransferFrom(from, to, id, amount, data);
+
+        // Once transfert is done, automatically allow marketplace to manage NFTs
+        setApprovalForAll(_marketplaceAddress,true);
     }
 
     /* Events */
