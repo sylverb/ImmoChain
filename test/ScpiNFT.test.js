@@ -36,7 +36,10 @@ describe("Test ScpiNFT", function() {
                 'RegisterNewScpi'
             )
             .withArgs(
-                1
+                1,
+                'SCPI 1',
+                99,
+                'URI'
             )
 
             const balanceData = await scpiNft.balanceOf(addr1.address,1)
@@ -53,7 +56,10 @@ describe("Test ScpiNFT", function() {
                 'RegisterNewScpi'
             )
             .withArgs(
-                1
+                1,
+                'SCPI 1',
+                99,
+                'URI1'
             )
 
             findEvent = await scpiNft.registerNewScpi(addr2.address,'SCPI 2',99999,'URI2',108)
@@ -65,7 +71,10 @@ describe("Test ScpiNFT", function() {
                 'RegisterNewScpi'
             )
             .withArgs(
-                2
+                2,
+                'SCPI 2',
+                108,
+                'URI2'
             )
 
             // Check balances

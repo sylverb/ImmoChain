@@ -76,7 +76,7 @@ contract ScpiNFT is ERC1155, Ownable {
         _setScpiURI(newItemId, _scpiURI);
         _setScpiName(newItemId, _scpiName);
         _setScpiPublicPrice(newItemId, _publicPrice);
-        emit RegisterNewScpi(newItemId);
+        emit RegisterNewScpi(newItemId, _scpiName, _publicPrice, _scpiURI);
         return newItemId;
     }
 
@@ -112,5 +112,5 @@ contract ScpiNFT is ERC1155, Ownable {
     }
 
     /* Events */
-    event RegisterNewScpi(uint256 companyId);
+    event RegisterNewScpi(uint256 companyId, string name, uint publicPrice, string uri);
 }
