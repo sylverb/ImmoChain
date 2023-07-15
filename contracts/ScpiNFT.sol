@@ -72,17 +72,17 @@ contract ScpiNFT is ERC1155, Ownable {
     }
 
     function _setScpiPublicPrice(
-        uint tokenId,
+        uint _tokenId,
         uint _publicPrice
     ) internal virtual {
-        _scpiInfos[tokenId].publicPrice  = _publicPrice;
+        _scpiInfos[_tokenId].publicPrice  = _publicPrice;
     }
 
     function _setScpiAddress(
-        uint tokenId,
+        uint _tokenId,
         address _scpiAddress
     ) internal virtual {
-        _scpiInfos[tokenId].scpiAddress  = _scpiAddress;
+        _scpiInfos[_tokenId].scpiAddress  = _scpiAddress;
     }
 
     /**
@@ -107,27 +107,38 @@ contract ScpiNFT is ERC1155, Ownable {
         _mint(_recipient, newItemId, _sharesAmount, "");
         _setScpiURI(newItemId, _scpiURI);
         _setScpiName(newItemId, _scpiName);
+        _setScpiSharesAmount(newItemId, _sharesAmount);
         _setScpiPublicPrice(newItemId, _publicPrice);
         _setScpiAddress(newItemId, _recipient);
         emit RegisterNewScpi(newItemId, _scpiName, _publicPrice, _scpiURI);
         return newItemId;
     }
 
-    function setScpiPublicPrice(
-        uint tokenId,
+    /**
+     * @dev     Set new price for a share. Only SCPI is allowed to change the price
+     *          TODO : Inform the marketplace smartcontract about the price change
+     *          to trigger some sell cancel if sellers wants to cancel their sale
+     *          in case of price change.
+     * @param   _tokenId  .
+     * @param   _publicPrice  .
+     */
+    function setPublicSharePrice(
+        uint _tokenId,
         uint _publicPrice
-    ) public onlyOwner {
-        _scpiInfos[tokenId].publicPrice  = _publicPrice;
+    ) public {
+        require (msg.sender == _scpiInfos[_tokenId].scpiAddress,"Only SCPI owner is allowed to update share price");
+        _scpiInfos[_tokenId].publicPrice  = _publicPrice;
+        emit SetNewSharePrice(_tokenId,_publicPrice);
     }
 
     /**
      * @notice  .
      * @dev     .
-     * @param   tokenId  .
+     * @param   _tokenId  .
      * @return  string  .
      */
-    function uri(uint256 tokenId) public view override returns (string memory) {
-        return _scpiInfos[tokenId].uri;
+    function uri(uint256 _tokenId) public view override returns (string memory) {
+        return _scpiInfos[_tokenId].uri;
     }
 
     /**
@@ -152,9 +163,6 @@ contract ScpiNFT is ERC1155, Ownable {
                 (msg.sender == _scpiInfos[id].scpiAddress && msg.sender == from) // SCPI can only transfer shares from its wallet
                 ,"Please use Marketplace to sell your shares");
         _safeTransferFrom(from, to, id, amount, data);
-
-        // Once transfert is done, automatically allow marketplace to manage NFTs
-//        setApprovalForAll(_marketplaceAddress,true);
     }
 
     function safeBatchTransferFrom(
@@ -166,6 +174,8 @@ contract ScpiNFT is ERC1155, Ownable {
     ) public virtual override {
         revert("safeBatchTransferFrom not allowed");
     }
+
     /* Events */
     event RegisterNewScpi(uint256 companyId, string name, uint publicPrice, string uri);
+    event SetNewSharePrice(uint256 companyId, uint newPrice);
 }

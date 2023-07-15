@@ -97,11 +97,45 @@ describe('Test ScpiNFT', function() {
             expect(uriData).to.equal('URI2')
 
         })
+
+        it('shall not register a SCPI if not owner', async function() {
+            await expect(scpiNft.connect(addr1).registerNewScpi(addr1.address,'SCPI 1',10000,'URI',99)).to.be.revertedWith('Ownable: caller is not the owner')
+        })
+    })
+
+    describe('Update share price', function() {
+        beforeEach(async function() {
+            [owner, scpi1, scpi2, user1] = await ethers.getSigners()
+            let contract = await ethers.getContractFactory('ScpiNFT')
+            scpiNft = await contract.deploy()
+            scpiNft.registerNewScpi(scpi1.address,'SCPI 1',5000,'URI',11)
+            scpiNft.registerNewScpi(scpi2.address,'SCPI 2',10000,'URI',22)
+        })
+
+        it('SCPI shall be able to change its share price', async function() {
+            findEvent = scpiNft.connect(scpi1).setPublicSharePrice(1,1000)
+            // Check receiving registerNewScpi event
+            await expect(findEvent)
+            .to.emit(
+                scpiNft, 
+                'SetNewSharePrice'
+            )
+            .withArgs(
+                1,
+                1000
+            )
+        })
+
+        it('Others shall not be able to change share price', async function() {
+            await expect(scpiNft.connect(scpi2).setPublicSharePrice(1,1000)).to.be.revertedWith('Only SCPI owner is allowed to update share price')
+            await expect(scpiNft.connect(scpi1).setPublicSharePrice(2,1000)).to.be.revertedWith('Only SCPI owner is allowed to update share price')
+            await expect(scpiNft.connect(user1).setPublicSharePrice(1,1000)).to.be.revertedWith('Only SCPI owner is allowed to update share price')
+        })
     })
 
     describe('Transfert tokens', function() {
         beforeEach(async function() {
-            [owner, scpi1, addr1, addr2] = await ethers.getSigners()
+            [owner, scpi1, marketplace, addr1, addr2] = await ethers.getSigners()
             let contract = await ethers.getContractFactory('ScpiNFT')
             scpiNft = await contract.deploy()
 
@@ -125,6 +159,17 @@ describe('Test ScpiNFT', function() {
 
             await scpiNft.connect(scpi1).safeTransferFrom(scpi1.address,addr1.address,1,50,ethers.ZeroHash)
             await expect(scpiNft.connect(scpi1).safeTransferFrom(addr1.address,addr2.address,1,50,ethers.ZeroHash)).to.be.revertedWith('Please use Marketplace to sell your shares')
+        })
+
+        it('Marketplace shall be able to transfert tokens from one wallet to another', async function() {
+            await expect(scpiNft.connect(addr1).setMarketplaceAddress(marketplace.address)).to.be.revertedWith('Ownable: caller is not the owner')
+            await scpiNft.setMarketplaceAddress(marketplace.address)
+            await scpiNft.connect(scpi1).safeTransferFrom(scpi1.address,addr1.address,1,6000,ethers.ZeroHash)
+            await scpiNft.connect(marketplace).safeTransferFrom(addr1.address,addr2.address,1,5000,ethers.ZeroHash)
+            var balanceData = await scpiNft.balanceOf(addr1.address,1)
+            expect(balanceData).to.equal(1000)
+            balanceData = await scpiNft.balanceOf(addr2.address,1)
+            expect(balanceData).to.equal(5000)
         })
 
         it('Users shall not be able to transfert tokens directly', async function() {

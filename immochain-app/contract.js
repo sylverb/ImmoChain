@@ -84,6 +84,25 @@ export const contractAbi = [
     "anonymous": false,
     "inputs": [
       {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "companyId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "newPrice",
+        "type": "uint256"
+      }
+    ],
+    "name": "SetNewSharePrice",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
         "indexed": true,
         "internalType": "address",
         "name": "operator",
@@ -405,7 +424,7 @@ export const contractAbi = [
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "tokenId",
+        "name": "_tokenId",
         "type": "uint256"
       },
       {
@@ -414,7 +433,7 @@ export const contractAbi = [
         "type": "uint256"
       }
     ],
-    "name": "setScpiPublicPrice",
+    "name": "setPublicSharePrice",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -455,7 +474,7 @@ export const contractAbi = [
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "tokenId",
+        "name": "_tokenId",
         "type": "uint256"
       }
     ],
