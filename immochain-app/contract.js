@@ -222,59 +222,6 @@ export const contractAbi = [
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "getScpiCount",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "getScpiInfos",
-    "outputs": [
-      {
-        "components": [
-          {
-            "internalType": "string",
-            "name": "name",
-            "type": "string"
-          },
-          {
-            "internalType": "string",
-            "name": "uri",
-            "type": "string"
-          },
-          {
-            "internalType": "uint256",
-            "name": "totalShares",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "publicPrice",
-            "type": "uint256"
-          },
-          {
-            "internalType": "address",
-            "name": "scpiAddress",
-            "type": "address"
-          }
-        ],
-        "internalType": "struct ScpiNFT.ScpiInfo[]",
-        "name": "",
-        "type": "tuple[]"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
     "inputs": [
       {
         "internalType": "address",
@@ -449,7 +396,7 @@ export const contractAbi = [
         "type": "address"
       }
     ],
-    "name": "setMarketplaceAdddress",
+    "name": "setMarketplaceAddress",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

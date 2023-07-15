@@ -2,7 +2,6 @@ import React, { useContext, createContext } from 'react';
 
 import { useAddress, useContract, useMetamask, useContractWrite } from '@thirdweb-dev/react';
 import { ethers } from 'ethers';
-import { EditionMetadataWithOwnerOutputSchema } from '@thirdweb-dev/sdk';
 import { contractAddress, contractAbi } from '../../contract';
 
 const StateContext = createContext();
@@ -50,24 +49,14 @@ export const StateContextProvider = ({ children }) => {
   }
 
   const getScpiInfos = async () => {
-/*    const eventName = "RegisterNewScpi";
-    const events = await contract.events.getEvents(eventName);
-    console.log("+++getScpiInfos events = "+registerScpiEventInfo.length);
+    const events = await contract.events.getEvents('RegisterNewScpi',{order: "asc"});
+    console.log("+++getScpiInfos events = "+events.length);
 
     const parsedInfos = events.map((event, i) => ({
       title: event.data.name,
       publicPrice: event.data.publicPrice.toNumber(),
       image: event.data.uri,
       pId: event.data.companyId
-    }));*/
-
-    const scpiInfos = await contract.call('getScpiInfos');
-
-    const parsedInfos = scpiInfos.map((scpiInfo, i) => ({
-      title: scpiInfo.name,
-      publicPrice: scpiInfo.publicPrice.toNumber(),
-      image: scpiInfo.uri,
-      pId: i
     }));
 
     return parsedInfos;

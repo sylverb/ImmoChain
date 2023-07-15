@@ -5,10 +5,28 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
- * @author  .
- * @title   .
- * @dev     .
- * @notice  .
+ * @title   ScpiNFT
+ * @dev     This contract describes the behaviour of a SCPI shares. A share is a token of a minted NFT.
+ *          Every SCPI is represented with a tokenId and can only be minted by the contract owner.
+ *          A SCPI store these different informations :
+ *          - A name
+ *          - Number of existing shares
+ *          - The public price of a share
+ *          - The address of the SCPI (where the shares are send)
+ *          - An uri
+ * 
+ *          A SCPI share is a regulated product and has some constraints :
+ *          - It can't be sold at a higher price than public price
+ *          - It can't be send from one owner from another directly
+ *          - It can't be "sold for free"
+ *          - Seller and buyer are required to have a valid KYC for the SCPI owning the shares
+ * 
+ *          Because of these constraints, the shares will have to be sold on a dedicated and controlled
+ *          marketplace. The address of the marketplace shall be set using setMarketplaceAddress function.
+ * 
+ *          The SCPI has the right to send tokens from its wallet to another.
+ *          The marketplace has full right to transfer tokens from a wallet to another.
+ *          Batch transfert feature is disabled (may be updated and enabled later if needed)
  */
 
 contract ScpiNFT is ERC1155, Ownable {
@@ -27,8 +45,9 @@ contract ScpiNFT is ERC1155, Ownable {
 
     constructor() ERC1155("") {}
 
-    function setMarketplaceAdddress(address _mpAddress) external onlyOwner {
+    function setMarketplaceAddress(address _mpAddress) external onlyOwner {
         _marketplaceAddress = _mpAddress;
+        setApprovalForAll(_marketplaceAddress,true);
     }
 
     function _setScpiURI(
@@ -94,20 +113,6 @@ contract ScpiNFT is ERC1155, Ownable {
         return newItemId;
     }
 
-    function getScpiCount(
-    ) public view returns (uint) {
-        return _tokenIds.current();
-    }
-
-    function getScpiInfos(
-    ) public view returns (ScpiInfo[] memory) {
-        ScpiInfo[] memory infos = new ScpiInfo[](_tokenIds.current());
-        for (uint i; i < _tokenIds.current(); i++) {
-            infos[i] = _scpiInfos[i+1];
-        }
-        return infos;
-    }
-
     function setScpiPublicPrice(
         uint tokenId,
         uint _publicPrice
@@ -149,7 +154,7 @@ contract ScpiNFT is ERC1155, Ownable {
         _safeTransferFrom(from, to, id, amount, data);
 
         // Once transfert is done, automatically allow marketplace to manage NFTs
-        setApprovalForAll(_marketplaceAddress,true);
+//        setApprovalForAll(_marketplaceAddress,true);
     }
 
     function safeBatchTransferFrom(
@@ -159,7 +164,7 @@ contract ScpiNFT is ERC1155, Ownable {
         uint256[] memory,// amounts,
         bytes memory // data
     ) public virtual override {
-        require (false,"safeBatchTransferFrom not allowed");
+        revert("safeBatchTransferFrom not allowed");
     }
     /* Events */
     event RegisterNewScpi(uint256 companyId, string name, uint publicPrice, string uri);
