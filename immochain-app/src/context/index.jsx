@@ -49,7 +49,7 @@ export const StateContextProvider = ({ children }) => {
   }
 
   const getScpiInfos = async () => {
-    const events = await contract.events.getEvents('RegisterNewScpi',{order: "asc"});
+    const events = await contract.events.getEvents('RegisterNewScpi');
     console.log("+++getScpiInfos events = "+events.length);
 
     const parsedInfos = events.map((event, i) => ({

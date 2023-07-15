@@ -12,6 +12,9 @@ const Home = () => {
   const fetchScpi = async () => {
     setIsLoading(true);
     const data = await getScpiInfos();
+    const updatedList = [...scpiList, ...data];
+    const sortedData = updatedList.sort((a, b) => a.title.localeCompare(b.title));
+
     setScpiList(prevScpiList => [...prevScpiList, ...data]);
     setIsLoading(false);
   }

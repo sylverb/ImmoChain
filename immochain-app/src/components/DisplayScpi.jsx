@@ -26,10 +26,10 @@ const DisplayScpi = ({ title, isLoading, scpiList }) => {
           </p>
         )}
 
-        {!isLoading && scpiList.length > 0 && scpiList.map((campaign) => <ScpiCard 
+        {!isLoading && scpiList.length > 0 && scpiList.map((scpi) => <ScpiCard 
           key={uuidv4()}
-          {...campaign}
-          handleClick={() => handleNavigate(campaign)}
+          {...scpi}
+          handleClick={() => handleNavigate(scpi)}
         />)}
       </div>
     </div>
