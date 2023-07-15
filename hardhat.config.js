@@ -1,4 +1,5 @@
 require("@nomicfoundation/hardhat-toolbox");
+require("hardhat-deploy");
 require("dotenv").config();
 const { API_URL, PRIVATE_KEY } = process.env;
 
@@ -18,6 +19,11 @@ module.exports = {
     mumbai: {
       url: API_URL,
       accounts: [`0x${PRIVATE_KEY}`],
+    },
+  },
+  namedAccounts: {
+    deployer: {
+      default: 0, // l'index du compte dans la liste d'adresses
     },
   },
 };
