@@ -4,7 +4,10 @@ pragma solidity 0.8.18;
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import "./SellOrderSetLib.sol";
 
-// Contract to implement buying and selling of ERC1155 SCPI shares
+/**
+ * @dev     Contract to implement buying and selling of ERC1155 SCPI shares
+ */
+
 contract Marketplace {
     // Use SellOrderSetLib for SellOrderSetLib.Set operations
     using SellOrderSetLib for SellOrderSetLib.Set;
@@ -26,6 +29,14 @@ contract Marketplace {
         uint256 unitPrice
     );
 
+    // Event to indicate a token is unlisted from sale
+    event UnlistedFromSale(
+        // Account address of the token owner
+        address account,
+        // NFT id
+        uint256 nftId
+    );
+
     // We have to get the ScpiNFT contract address
     constructor (address _scpiNftContract) {
         scpiNftContract = _scpiNftContract;
@@ -45,7 +56,7 @@ contract Marketplace {
         uint256 noOfTokensForSale
     ) external {
         // Require that the unit price of each token must be greater than 0
-        require(unitPrice > 0, "NFTTrade: Price must be greater than 0.");
+        require(unitPrice > 0, "Marketplace: Price must be greater than 0");
 
         // Get the unique identifier for the sell order
         bytes32 orderId = _getOrdersMapId(nftId);
@@ -56,23 +67,17 @@ contract Marketplace {
         // Require that the token is not already listed for sale by the same owner
         require(
             !nftOrders.orderExistsForAddress(msg.sender),
-            "NFTTrade: Token is already listed for sale by the given owner"
+            "Marketplace: Token is already listed for sale by the given owner"
         );
 
         // Get the ERC1155 contract
         IERC1155 tokenContract = IERC1155(scpiNftContract);
 
-        // Require that the caller has approved the NFTTrade contract for token transfer
-        require(
-            tokenContract.isApprovedForAll(msg.sender, address(this)),
-            "NFTTrade: Caller has not approved NFTTrade contract for token transfer."
-        );
-
         // Require that the caller has sufficient balance of the NFT token
         require(
             tokenContract.balanceOf(msg.sender, nftId) >=
                 noOfTokensForSale,
-            "NFTTrade: Insufficient token balance."
+            "Marketplace: Insufficient token balance"
         );
 
         // Create a new sell order using the SellOrder constructor
@@ -90,6 +95,31 @@ contract Marketplace {
             noOfTokensForSale,
             unitPrice
         );
+    }
+
+    /**
+     * cancelSellOrder - Cancels the sell order created by the caller for a specific NFT token.
+     *
+     * @param nftId ID of the NFT token to cancel the sell order for.
+     */
+    function cancelSellOrder(uint256 nftId) external {
+        // Get the unique identifier for the order set of the given NFT token.
+        bytes32 orderId = _getOrdersMapId(nftId);
+
+        // Get the sell order set of the given NFT token.
+        SellOrderSetLib.Set storage nftOrders = orders[orderId];
+
+        // Ensure that the sell order exists for the caller.
+        require(
+            nftOrders.orderExistsForAddress(msg.sender),
+            "Marketplace: Given token is not listed for sale by the owner"
+        );
+
+        // Remove the sell order from the set.
+        nftOrders.remove(nftOrders.orderByAddress(msg.sender));
+
+        // Emit an event indicating that the sell order has been unlisted.
+        emit UnlistedFromSale(msg.sender, nftId);
     }
 
     /**
