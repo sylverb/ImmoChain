@@ -2,12 +2,13 @@ import React, { useContext, createContext } from 'react';
 
 import { useAddress, useContract, useMetamask, useContractWrite } from '@thirdweb-dev/react';
 import { ethers } from 'ethers';
-import { contractAddress, contractAbi } from '../../contract';
+import { scpiNftContractAddress, scpiNftContractAbi } from '../../contract';
+import { marketplaceContractAddress, marketplaceContractAbi } from '../../contract';
 
 const StateContext = createContext();
 
 export const StateContextProvider = ({ children }) => {
-  const { contract } = useContract(contractAddress,contractAbi);
+  const { contract } = useContract(scpiNftContractAddress, scpiNftContractAbi);
   const { mutateAsync: createCampaign } = useContractWrite(contract, 'createCampaign');
 
   const address = useAddress();
@@ -16,15 +17,15 @@ export const StateContextProvider = ({ children }) => {
   const publishCampaign = async (form) => {
     try {
       const data = await createCampaign({
-				args: [
-					address, // owner
-					form.title, // title
-					form.description, // description
-					form.target,
-					new Date(form.deadline).getTime(), // deadline,
-					form.image,
-				],
-			});
+        args: [
+          address, // owner
+          form.title, // title
+          form.description, // description
+          form.target,
+          new Date(form.deadline).getTime(), // deadline,
+          form.image,
+        ],
+      });
 
       console.log("contract call success", data)
     } catch (error) {
@@ -36,11 +37,11 @@ export const StateContextProvider = ({ children }) => {
     try {
       console.log("form name = "+form.name);
       const data = await contract.call('registerNewScpi',
-					address, // owner
-					form.name, // name
-					form.sharesAmount, // shares amount
-					form.image,
-					form.sharePublicPrice);
+          form.address, // address
+          form.name, // name
+          form.sharesAmount, // shares amount
+          form.image,
+          form.sharePublicPrice);
 
       console.log("contract call success", data)
     } catch (error) {

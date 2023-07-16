@@ -13,6 +13,7 @@ const RegisterScpi = () => {
   const { createScpi } = useStateContext();
   const [form, setForm] = useState({
     name: '',
+    address: '',
     sharesAmount: '', 
     sharePublicPrice: '', 
     image: ''
@@ -32,7 +33,7 @@ const RegisterScpi = () => {
         setIsLoading(false);
         navigate('/');
       } else {
-        alert('Provide valid image URL')
+        alert('l\'URL n\'est pas valide')
         setForm({ ...form, image: '' });
       }
     })
@@ -42,31 +43,41 @@ const RegisterScpi = () => {
     <div className="bg-[#1c1c24] flex justify-center items-center flex-col rounded-[10px] sm:p-10 p-4">
       {isLoading && <Loader />}
       <div className="flex justify-center items-center p-[16px] sm:min-w-[380px] bg-[#3a3a43] rounded-[10px]">
-        <h1 className="font-epilogue font-bold sm:text-[25px] text-[18px] leading-[38px] text-white">Register a new SCPI</h1>
+        <h1 className="font-epilogue font-bold sm:text-[25px] text-[18px] leading-[38px] text-white">Enregister une nouvelle SCPI</h1>
       </div>
 
       <form onSubmit={handleSubmit} className="w-full mt-[65px] flex flex-col gap-[30px]">
         <div className="flex flex-wrap gap-[40px]">
           <FormField 
-            labelName="SCPI Name"
-            placeholder="name"
+            labelName="Nom de la SCPI"
+            placeholder="nom"
             inputType="text"
             value={form.name}
             handleChange={(e) => handleFormFieldChange('name', e)}
           />
         </div>
-        
+
         <div className="flex flex-wrap gap-[40px]">
           <FormField 
-            labelName="SCPI Shares amount"
-            placeholder="number of shares you want to create"
+            labelName="Adresse de la SCPI"
+            placeholder="0x"
+            inputType="text"
+            value={form.address}
+            handleChange={(e) => handleFormFieldChange('address', e)}
+          />
+        </div>
+
+        <div className="flex flex-wrap gap-[40px]">
+          <FormField 
+            labelName="Nombre de parts de SCPI à générer"
+            placeholder="nombre de parts"
             inputType="text"
             value={form.sharesAmount}
             handleChange={(e) => handleFormFieldChange('sharesAmount', e)}
           />
           <FormField 
-            labelName="SCPI Shares public price"
-            placeholder="Current price of a share in Euros"
+            labelName="Prix public d'une part de la SCPI"
+            placeholder="Prix courant de la part en $Matic"
             inputType="text"
             value={form.sharePublicPrice}
             handleChange={(e) => handleFormFieldChange('sharePublicPrice', e)}
@@ -74,8 +85,8 @@ const RegisterScpi = () => {
         </div>
 
         <FormField 
-            labelName="SCPI logo image"
-            placeholder="Place image URL of your logo"
+            labelName="Logo de la SCPI"
+            placeholder="Entrez l'URL de votre logo"
             inputType="url"
             value={form.image}
             handleChange={(e) => handleFormFieldChange('image', e)}
@@ -84,7 +95,7 @@ const RegisterScpi = () => {
           <div className="flex justify-center items-center mt-[40px]">
             <CustomButton 
               btnType="submit"
-              title="Create new SCPI"
+              title="Enregister cette SCPI"
               styles="bg-[#1dc071]"
             />
           </div>

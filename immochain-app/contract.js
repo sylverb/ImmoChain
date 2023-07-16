@@ -1,5 +1,5 @@
-export const contractAddress = '0x5FbDB2315678afecb367f032d93F642f64180aa3';
-export const contractAbi = [
+export const scpiNftContractAddress = '0x5FbDB2315678afecb367f032d93F642f64180aa3';
+export const scpiNftContractAbi = [
   {
     "inputs": [],
     "stateMutability": "nonpayable",
@@ -484,6 +484,183 @@ export const contractAbi = [
         "internalType": "string",
         "name": "",
         "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+];
+export const marketplaceContractAddress = '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512';
+export const marketplaceContractAbi = [
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_scpiNftContract",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "nftId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "noOfTokensForSale",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "unitPrice",
+        "type": "uint256"
+      }
+    ],
+    "name": "ListedForSale",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "nftId",
+        "type": "uint256"
+      }
+    ],
+    "name": "UnlistedFromSale",
+    "type": "event"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "nftId",
+        "type": "uint256"
+      }
+    ],
+    "name": "cancelSellOrder",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "nftId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "unitPrice",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "noOfTokensForSale",
+        "type": "uint256"
+      }
+    ],
+    "name": "createSellOrder",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "nftId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "listedBy",
+        "type": "address"
+      }
+    ],
+    "name": "getOrderByAddress",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "listedBy",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "quantity",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "unitPrice",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct SellOrderSetLib.SellOrder",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "nftId",
+        "type": "uint256"
+      }
+    ],
+    "name": "getOrders",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "listedBy",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "quantity",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "unitPrice",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct SellOrderSetLib.SellOrder[]",
+        "name": "",
+        "type": "tuple[]"
       }
     ],
     "stateMutability": "view",
