@@ -39,7 +39,8 @@ describe('Test ScpiNFT', function() {
                 1,
                 'SCPI 1',
                 99,
-                'URI'
+                'URI',
+                10000
             )
 
             const balanceData = await scpiNft.balanceOf(addr1.address,1)
@@ -59,7 +60,8 @@ describe('Test ScpiNFT', function() {
                 1,
                 'SCPI 1',
                 99,
-                'URI1'
+                'URI1',
+                10000
             )
 
             findEvent = await scpiNft.registerNewScpi(addr2.address,'SCPI 2',99999,'URI2',108)
@@ -74,7 +76,8 @@ describe('Test ScpiNFT', function() {
                 2,
                 'SCPI 2',
                 108,
-                'URI2'
+                'URI2',
+                99999
             )
 
             // Check balances
@@ -114,7 +117,7 @@ describe('Test ScpiNFT', function() {
 
         it('SCPI shall be able to change its share price', async function() {
             findEvent = scpiNft.connect(scpi1).setPublicSharePrice(1,1000)
-            // Check receiving registerNewScpi event
+            // Check receiving SetNewSharePrice event
             await expect(findEvent)
             .to.emit(
                 scpiNft, 

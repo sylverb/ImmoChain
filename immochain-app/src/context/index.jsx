@@ -8,8 +8,9 @@ import { marketplaceContractAddress, marketplaceContractAbi } from '../../contra
 const StateContext = createContext();
 
 export const StateContextProvider = ({ children }) => {
-  const { contract } = useContract(scpiNftContractAddress, scpiNftContractAbi);
-  const { mutateAsync: createCampaign } = useContractWrite(contract, 'createCampaign');
+  const { contract : scpiNftContract } = useContract(scpiNftContractAddress, scpiNftContractAbi);
+  const { contract : marketplaceContract } = useContract(marketplaceContractAddress, marketplaceContractAbi);
+  const { mutateAsync: createCampaign } = useContractWrite(scpiNftContract, 'createCampaign');
 
   const address = useAddress();
   const connect = useMetamask();
@@ -35,8 +36,8 @@ export const StateContextProvider = ({ children }) => {
 
   const createScpi = async (form) => {
     try {
-      console.log("form name = "+form.name);
-      const data = await contract.call('registerNewScpi',
+      console.log("createScpi = "+form.name);
+      const data = await scpiNftContract.call('registerNewScpi',
           form.address, // address
           form.name, // name
           form.sharesAmount, // shares amount
@@ -50,19 +51,58 @@ export const StateContextProvider = ({ children }) => {
   }
 
   const getScpiInfos = async () => {
-    const events = await contract.events.getEvents('RegisterNewScpi');
+    const events = await scpiNftContract.events.getEvents('RegisterNewScpi');
     console.log("+++getScpiInfos events = "+events.length);
-
     const parsedInfos = events.map((event, i) => ({
       title: event.data.name,
       publicPrice: event.data.publicPrice.toNumber(),
       image: event.data.uri,
-      pId: event.data.companyId
+      totalShares: event.data.amount.toNumber(),
+      pId: event.data.companyId.toNumber()
     }));
 
     return parsedInfos;
   }
 
+  const getSharesBalance = async (address, pid) => {
+    try {
+      console.log("getSharesBalance address ="+address+" / pid = "+pid)
+      const balance = await scpiNftContract.call('balanceOf',
+      address, // address to get balance of
+      pid // id of the SCPI
+      );
+      console.log("getSharesBalance  ="+balance)
+      return balance.toNumber()
+    } catch (error) {
+      console.log("getSharesBalance call failure", error)
+      return 0
+    }
+
+  }
+
+  const getSalesOrders = async (id) => {
+    const parsedSalesOrders = [];
+    try {
+      console.log("getSalesOrders id = "+id);
+      const datas = await marketplaceContract.call('getOrders',
+          id, // id of the SCPI
+      );
+
+      console.log("getSalesOrders call success", datas)
+      const numberOfSaleOrders = datas.length;
+
+      for(let i = 0; i < numberOfSaleOrders; i++) {
+          parsedSalesOrders.push({
+            listedBy: datas[i].listedBy,
+            quantity: datas[i].quantity.toNumber(),
+            unitPrice: datas[i].unitPrice.toNumber()
+        })
+      }
+    } catch (error) {
+      console.log("getSalesOrders call failure", error)
+    }
+    return parsedSalesOrders;
+  }
 
   const getUserCampaigns = async () => {
     const allCampaigns = await getScpiInfos();
@@ -73,13 +113,13 @@ export const StateContextProvider = ({ children }) => {
   }
 
   const donate = async (pId, amount) => {
-    const data = await contract.call('donateToCampaign', [pId], { value: ethers.utils.parseEther(amount)});
+    const data = await scpiNftContract.call('donateToCampaign', [pId], { value: ethers.utils.parseEther(amount)});
 
     return data;
   }
 
   const getDonations = async (pId) => {
-    const donations = await contract.call('getDonators', [pId]);
+    const donations = await scpiNftContract.call('getDonators', [pId]);
     const numberOfDonations = donations[0].length;
 
     const parsedDonations = [];
@@ -98,10 +138,13 @@ export const StateContextProvider = ({ children }) => {
     <StateContext.Provider
       value={{ 
         address,
-        contract,
+        scpiNftContract,
+        marketplaceContract,
         connect,
         createScpi,
+        getSharesBalance,
         getScpiInfos,
+        getSalesOrders,
         getUserCampaigns,
         donate,
         getDonations

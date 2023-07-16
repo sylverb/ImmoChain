@@ -7,7 +7,7 @@ const Home = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [scpiList, setScpiList] = useState([]);
 
-  const { address, contract, getScpiInfos } = useStateContext();
+  const { address, scpiNftContract, marketplaceContract, getScpiInfos } = useStateContext();
 
   const fetchScpi = async () => {
     setIsLoading(true);
@@ -20,8 +20,8 @@ const Home = () => {
   }
 
   useEffect(() => {
-    if(contract) fetchScpi();
-  }, [address, contract]);
+    if(scpiNftContract) fetchScpi();
+  }, [address, scpiNftContract, marketplaceContract]);
 
   return (
     <DisplayScpi 

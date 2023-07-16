@@ -75,6 +75,12 @@ export const scpiNftContractAbi = [
         "internalType": "string",
         "name": "uri",
         "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
       }
     ],
     "name": "RegisterNewScpi",

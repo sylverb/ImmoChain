@@ -6,27 +6,39 @@ import { useStateContext } from '../context';
 import { CountBox, CustomButton, Loader } from '../components';
 import { calculateBarPercentage, daysLeft } from '../utils';
 import { thirdweb } from '../assets';
+import { useAddress } from '@thirdweb-dev/react';
 
-const CampaignDetails = () => {
+const ScpiDetails = () => {
   const { state } = useLocation();
   const navigate = useNavigate();
-  const { donate, getDonations, contract, address } = useStateContext();
+  const { donate, getSalesOrders, scpiNftContract, marketplaceContract, getSharesBalance, address } = useStateContext();
 
   const [isLoading, setIsLoading] = useState(false);
   const [amount, setAmount] = useState('');
-  const [donators, setDonators] = useState([]);
+  const [salesOrders, setSalesOrders] = useState([]);
+  const [balance, setBalance] = useState();
 
   const remainingDays = daysLeft(state.deadline);
+  const userAddress = useAddress(); // Récupérer l'adresse du wallet connecté
 
-  const fetchDonators = async () => {
-    const data = await getDonations(state.pId);
+  const fetchSalesOrders = async () => {
+    const data = await getSalesOrders(state.pId);
 
-    setDonators(data);
+    setSalesOrders(data);
+  }
+
+  const fetchOwnedShares = async () => {
+    const result = await getSharesBalance(userAddress, state.pId);
+    setBalance(result);
   }
 
   useEffect(() => {
-    if(contract) fetchDonators();
-  }, [contract, address])
+    if(marketplaceContract) fetchSalesOrders();
+  }, [marketplaceContract])
+
+  useEffect(() => {
+    if(scpiNftContract) fetchOwnedShares();
+  }, [marketplaceContract])
 
   const handleDonate = async () => {
     setIsLoading(true);
@@ -51,47 +63,25 @@ const CampaignDetails = () => {
         </div>
 
         <div className="flex md:w-[150px] w-full flex-wrap justify-between gap-[30px]">
-          <CountBox title="Days Left" value={remainingDays} />
-          <CountBox title={`Raised of ${state.target}`} value={state.amountCollected} />
-          <CountBox title="Total Backers" value={donators.length} />
+          <CountBox title="Nombre de parts total" value={state.totalShares} />
+          <CountBox title="Nombre de parts possédées" value={balance} />
+          <CountBox title="Prix unitaire des parts" value={state.publicPrice} />
         </div>
       </div>
 
       <div className="mt-[60px] flex lg:flex-row flex-col gap-5">
         <div className="flex-[2] flex flex-col gap-[40px]">
           <div>
-            <h4 className="font-epilogue font-semibold text-[18px] text-white uppercase">Creator</h4>
-
-            <div className="mt-[20px] flex flex-row items-center flex-wrap gap-[14px]">
-              <div className="w-[52px] h-[52px] flex items-center justify-center rounded-full bg-[#2c2f32] cursor-pointer">
-                <img src={thirdweb} alt="user" className="w-[60%] h-[60%] object-contain"/>
-              </div>
-              <div>
-                <h4 className="font-epilogue font-semibold text-[14px] text-white break-all">{state.owner}</h4>
-                <p className="mt-[4px] font-epilogue font-normal text-[12px] text-[#808191]">10 Campaigns</p>
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <h4 className="font-epilogue font-semibold text-[18px] text-white uppercase">Story</h4>
-
-              <div className="mt-[20px]">
-                <p className="font-epilogue font-normal text-[16px] text-[#808191] leading-[26px] text-justify">{state.description}</p>
-              </div>
-          </div>
-
-          <div>
-            <h4 className="font-epilogue font-semibold text-[18px] text-white uppercase">Donators</h4>
+            <h4 className="font-epilogue font-semibold text-[18px] text-white uppercase">Ordres de vente</h4>
 
               <div className="mt-[20px] flex flex-col gap-4">
-                {donators.length > 0 ? donators.map((item, index) => (
-                  <div key={`${item.donator}-${index}`} className="flex justify-between items-center gap-4">
-                    <p className="font-epilogue font-normal text-[16px] text-[#b2b3bd] leading-[26px] break-ll">{index + 1}. {item.donator}</p>
-                    <p className="font-epilogue font-normal text-[16px] text-[#808191] leading-[26px] break-ll">{item.donation}</p>
+                {salesOrders.length > 0 ? salesOrders.map((item, index) => (
+                  <div key={`${item.listedBy}-${index}`} className="flex justify-between items-center gap-4">
+                    <p className="font-epilogue font-normal text-[16px] text-[#b2b3bd] leading-[26px] break-ll">{index + 1}. {item.listedBy}</p>
+                    <p className="font-epilogue font-normal text-[16px] text-[#808191] leading-[26px] break-ll">{item.quantity}</p>
                   </div>
                 )) : (
-                  <p className="font-epilogue font-normal text-[16px] text-[#808191] leading-[26px] text-justify">No donators yet. Be the first one!</p>
+                  <p className="font-epilogue font-normal text-[16px] text-[#808191] leading-[26px] text-justify">Aucune part en vente</p>
                 )}
               </div>
           </div>
@@ -133,4 +123,4 @@ const CampaignDetails = () => {
   )
 }
 
-export default CampaignDetails
+export default ScpiDetails

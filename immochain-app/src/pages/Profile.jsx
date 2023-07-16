@@ -7,7 +7,7 @@ const Profile = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [scpiList, setScpiList] = useState([]);
 
-  const { address, contract, getUserCampaigns } = useStateContext();
+  const { address, scpiNftContract, getUserCampaigns } = useStateContext();
 
   const fetchScpi = async () => {
     setIsLoading(true);
@@ -17,8 +17,8 @@ const Profile = () => {
   }
 
   useEffect(() => {
-    if(contract) fetchScpi();
-  }, [address, contract]);
+    if(scpiNftContract) fetchScpi();
+  }, [address, scpiNftContract]);
 
   return (
     <DisplayScpi 
