@@ -47,14 +47,19 @@ const ScpiDetails = () => {
     setIsLoading(false);
   }
 
-  const handleCancelShareSale = async (index) => {
+  const handleCancelShareSale = async () => {
     setIsLoading(true);
 
     await cancelSaleOrders(state.pId); 
 
     setIsLoading(false);
   }
+  const handleBuyShareSale = async () => {
+    setIsLoading(true);
 
+    setIsLoading(false);
+  }
+  
   return (
     <div>
       {isLoading && <Loader />}
@@ -117,16 +122,29 @@ const ScpiDetails = () => {
               <div className="mt-[20px] flex flex-col gap-4">
                 {salesOrders.length > 0 ? salesOrders.map((item, index) => (
                   <div key={`${item.listedBy}-${index}`} className="flex justify-between items-center gap-4">
+                    {item.listedBy === userAddress ? (
+                    <p className="font-epilogue font-normal text-[16px] text-[#b2b3bd] leading-[26px] break-ll">{index + 1}. Vous</p>
+                    ):
+                    (
                     <p className="font-epilogue font-normal text-[16px] text-[#b2b3bd] leading-[26px] break-ll">{index + 1}. {item.listedBy}</p>
+                    )}
                     <CountBox title="Nombre de parts" value={item.quantity} />
-                    {item.listedBy == userAddress ? salesOrders.map((item, index) => (
-                      <CustomButton 
+                    {item.listedBy === userAddress ? (
+                    <CustomButton 
                       btnType="button"
                       title="Annuler"
                       styles="w-100px bg-[#8c6dfd]"
-                      handleClick={handleCancelShareSale(index)}
-                    />                    )) : ( <div></div>
+                      handleClick={() => handleCancelShareSale()}
+                    />
+                    ) : (
+                    <CustomButton 
+                      btnType="button"
+                      title="Acheter"
+                      styles="w-100px bg-[#8c6dfd]"
+                      handleClick={() => handleBuyShareSale()}
+                    />
                     )}
+
                   </div>
                 )) : (
                   <p className="font-epilogue font-normal text-[16px] text-[#808191] leading-[26px] text-justify">Aucune part en vente</p>
