@@ -16,13 +16,17 @@ const ScpiDetails = () => {
   const [sharesAmount, setSharesAmount] = useState();
   const [sellPrice, setSellPrice] = useState(100);
   const [salesOrders, setSalesOrders] = useState([]);
+  const [rawSalesOrders, setRawSalesOrders] = useState([]);
+  const [myOrders, setMyOrders] = useState([]);
   const [balance, setBalance] = useState();
 
   const userAddress = useAddress(); // get connected wallet address
 
   const fetchSalesOrders = async () => {
     const orders = await getSalesOrders(state.pId);
-
+    console.log("orders = "+JSON.stringify(orders));
+    setMyOrders(await mySalesOrders(orders));
+    setRawSalesOrders(orders);
 /*    const testSalesOrders = [];
 
 for (let i = 0; i < 30; i++) {
@@ -53,6 +57,12 @@ console.log('Sylver Sales Orders:', testSalesOrders);
     }, {});
 
     setSalesOrders(groupedSalesOrders);
+  }
+
+  const mySalesOrders = async (salesArray) => {
+    const filteredOrders = salesArray.filter((order) => order.listedBy === userAddress);
+
+    return filteredOrders;
   }
 
   const calculateTotalQuantity = (orders, unitPrice) => {
@@ -157,12 +167,36 @@ console.log('Sylver Sales Orders:', testSalesOrders);
           <div>
             <h4 className="font-epilogue font-semibold text-[18px] text-white uppercase">Ordres de vente</h4>
 
-              <div className="mt-[20px] flex flex-col gap-4">
+            <div className="mt-[20px] flex flex-col p-4 bg-[#1c1c24] rounded-[10px]">
                 <div className="mt-[20px] flex flex-col gap-4">
                 {Object.entries(salesOrders).map(([unitPrice, orders]) => (
                   <div key={unitPrice} className="flex justify-between items-center gap-4">
-                    <p className="font-epilogue font-normal text-[16px] text-[#b2b3bd] leading-[26px] break-ll">{unitPrice}</p>
-                    <CountBox title="Parts en vente" value={calculateTotalQuantity(salesOrders,unitPrice)} />
+                    <p className="font-epilogue font-normal text-[16px] text-[#b2b3bd] leading-[26px] break-ll">{Math.floor(unitPrice*state.publicPrice/100)}</p>
+                    <p className="font-epilogue font-normal text-[16px] text-[#b2b3bd] leading-[26px] break-ll">{calculateTotalQuantity(salesOrders,unitPrice)}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div>
+            <h4 className="font-epilogue font-semibold text-[18px] text-white uppercase">Mes ventes</h4>
+
+            <div className="mt-[20px] flex flex-col p-4 bg-[#1c1c24] rounded-[10px]">
+                <div className="mt-[20px] flex flex-col gap-4">
+                {Object.values(myOrders).map((order) => (
+                <div key={order.unitPrice} className="flex justify-between items-center gap-4">
+                  <p className="font-epilogue font-normal text-[16px] text-[#b2b3bd] leading-[26px] break-ll">
+                    {Math.floor(order.unitPrice * state.publicPrice / 100)}
+                  </p>
+                  <p className="font-epilogue font-normal text-[16px] text-[#b2b3bd] leading-[26px] break-ll">
+                    {order.quantity}
+                  </p>
+                  <CustomButton 
+                      btnType="button"
+                      title="Annuler"
+                      styles="w-100px bg-[#8c6dfd]"
+                      handleClick={() => handleCancelShareSale()}
+                    />
                   </div>
                 ))}
               </div>
