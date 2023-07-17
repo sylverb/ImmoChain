@@ -33,6 +33,9 @@ export const StateContextProvider = ({ children }) => {
       console.log("contract call failure", error)
     }
   }
+  /*************************************************/
+  /* SCPI NFT actions                           */
+  /*************************************************/
 
   const createScpi = async (form) => {
     try {
@@ -80,15 +83,31 @@ export const StateContextProvider = ({ children }) => {
 
   }
 
+  /*************************************************/
+  /* Marketplace actions                           */
+  /*************************************************/
+  
+  const createSaleOrder = async (id,price,quantity) => {
+    try {
+     await marketplaceContract.call('createSellOrder',
+          id, // id of the SCPI
+          price, // price per share
+          quantity // number of shares to sell
+      );
+
+      console.log("createSellOrder call success")
+    } catch (error) {
+      console.log("createSellOrder call failure", error)
+    }
+  }
+
   const getSalesOrders = async (id) => {
     const parsedSalesOrders = [];
     try {
-      console.log("getSalesOrders id = "+id);
       const datas = await marketplaceContract.call('getOrders',
           id, // id of the SCPI
       );
 
-      console.log("getSalesOrders call success", datas)
       const numberOfSaleOrders = datas.length;
 
       for(let i = 0; i < numberOfSaleOrders; i++) {
@@ -104,18 +123,24 @@ export const StateContextProvider = ({ children }) => {
     return parsedSalesOrders;
   }
 
+  const cancelSaleOrders = async (id) => {
+    try {
+     await marketplaceContract.call('cancelSellOrder',
+          id, // id of the SCPI
+      );
+
+      console.log("cancelSellOrder call success")
+    } catch (error) {
+      console.log("cancelSellOrder call failure", error)
+    }
+  }
+
   const getUserCampaigns = async () => {
     const allCampaigns = await getScpiInfos();
 
     const filteredCampaigns = allCampaigns.filter((campaign) => campaign.owner === address);
 
     return filteredCampaigns;
-  }
-
-  const donate = async (pId, amount) => {
-    const data = await scpiNftContract.call('donateToCampaign', [pId], { value: ethers.utils.parseEther(amount)});
-
-    return data;
   }
 
   const getDonations = async (pId) => {
@@ -144,9 +169,10 @@ export const StateContextProvider = ({ children }) => {
         createScpi,
         getSharesBalance,
         getScpiInfos,
+        createSaleOrder,
         getSalesOrders,
+        cancelSaleOrders,
         getUserCampaigns,
-        donate,
         getDonations
       }}
     >
