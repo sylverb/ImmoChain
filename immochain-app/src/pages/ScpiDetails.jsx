@@ -21,10 +21,48 @@ const ScpiDetails = () => {
   const userAddress = useAddress(); // get connected wallet address
 
   const fetchSalesOrders = async () => {
-    const data = await getSalesOrders(state.pId);
+    const orders = await getSalesOrders(state.pId);
 
-    setSalesOrders(data);
+/*    const testSalesOrders = [];
+
+for (let i = 0; i < 30; i++) {
+  const unitPrices = [80, 85, 90, 100];
+  const randomIndex = Math.floor(Math.random() * unitPrices.length);
+  const unitPrice = unitPrices[randomIndex];
+  const order = {
+    listedBy: `Seller ${i}`,
+    quantity: Math.floor(Math.random() * 10) + 1,
+    unitPrice: unitPrice
+  };
+  testSalesOrders.push(order);
+}
+console.log('Sylver Sales Orders:', testSalesOrders);
+    const orders = testSalesOrders;
+*/
+
+    // Trie les commandes par unitPrice en ordre croissant
+    orders.sort((a, b) => a.unitPrice - b.unitPrice);
+
+    const groupedSalesOrders = orders.reduce((result, currentValue) => {
+      let groupKey = currentValue['unitPrice'];
+      if (!result[groupKey]) {
+        result[groupKey] = [];
+      }
+      result[groupKey].push(currentValue);
+      return result;
+    }, {});
+
+    setSalesOrders(groupedSalesOrders);
   }
+
+  const calculateTotalQuantity = (orders, unitPrice) => {
+    const filteredOrders = orders[unitPrice] || [];
+    if (filteredOrders.length === 0) {
+      return 0;
+    }
+    const totalQuantity = filteredOrders.reduce((sum, order) => sum + order.quantity, 0);
+    return totalQuantity;
+  };
 
   const fetchOwnedShares = async () => {
     const result = await getSharesBalance(userAddress, state.pId);
@@ -120,36 +158,15 @@ const ScpiDetails = () => {
             <h4 className="font-epilogue font-semibold text-[18px] text-white uppercase">Ordres de vente</h4>
 
               <div className="mt-[20px] flex flex-col gap-4">
-                {salesOrders.length > 0 ? salesOrders.map((item, index) => (
-                  <div key={`${item.listedBy}-${index}`} className="flex justify-between items-center gap-4">
-                    {item.listedBy === userAddress ? (
-                    <p className="font-epilogue font-normal text-[16px] text-[#b2b3bd] leading-[26px] break-ll">{index + 1}. Vous</p>
-                    ):
-                    (
-                    <p className="font-epilogue font-normal text-[16px] text-[#b2b3bd] leading-[26px] break-ll">{index + 1}. {item.listedBy}</p>
-                    )}
-                    <CountBox title="Nombre de parts" value={item.quantity} />
-                    {item.listedBy === userAddress ? (
-                    <CustomButton 
-                      btnType="button"
-                      title="Annuler"
-                      styles="w-100px bg-[#8c6dfd]"
-                      handleClick={() => handleCancelShareSale()}
-                    />
-                    ) : (
-                    <CustomButton 
-                      btnType="button"
-                      title="Acheter"
-                      styles="w-100px bg-[#8c6dfd]"
-                      handleClick={() => handleBuyShareSale()}
-                    />
-                    )}
-
+                <div className="mt-[20px] flex flex-col gap-4">
+                {Object.entries(salesOrders).map(([unitPrice, orders]) => (
+                  <div key={unitPrice} className="flex justify-between items-center gap-4">
+                    <p className="font-epilogue font-normal text-[16px] text-[#b2b3bd] leading-[26px] break-ll">{unitPrice}</p>
+                    <CountBox title="Parts en vente" value={calculateTotalQuantity(salesOrders,unitPrice)} />
                   </div>
-                )) : (
-                  <p className="font-epilogue font-normal text-[16px] text-[#808191] leading-[26px] text-justify">Aucune part en vente</p>
-                )}
+                ))}
               </div>
+            </div>
           </div>
         </div>
       </div>
