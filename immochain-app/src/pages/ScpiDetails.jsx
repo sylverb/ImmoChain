@@ -14,6 +14,7 @@ const ScpiDetails = () => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [sharesAmount, setSharesAmount] = useState();
+  const [buySharesAmount, setBuySharesAmount] = useState();
   const [sellPrice, setSellPrice] = useState(100);
   const [salesOrders, setSalesOrders] = useState([]);
   const [rawSalesOrders, setRawSalesOrders] = useState([]);
@@ -25,8 +26,7 @@ const ScpiDetails = () => {
   const fetchSalesOrders = async () => {
     const orders = await getSalesOrders(state.pId);
     console.log("orders = "+JSON.stringify(orders));
-    setMyOrders(await mySalesOrders(orders));
-    setRawSalesOrders(orders);
+
 /*    const testSalesOrders = [];
 
 for (let i = 0; i < 30; i++) {
@@ -43,6 +43,9 @@ for (let i = 0; i < 30; i++) {
 console.log('Sylver Sales Orders:', testSalesOrders);
     const orders = testSalesOrders;
 */
+
+    setMyOrders(await mySalesOrders(orders));
+    setRawSalesOrders(orders);
 
     // Trie les commandes par unitPrice en ordre croissant
     orders.sort((a, b) => a.unitPrice - b.unitPrice);
@@ -165,7 +168,7 @@ console.log('Sylver Sales Orders:', testSalesOrders);
         </div>
         <div className="flex-[2] flex flex-col gap-[40px]">
           <div>
-            <h4 className="font-epilogue font-semibold text-[18px] text-white uppercase">Ordres de vente</h4>
+            <h4 className="font-epilogue font-semibold text-[18px] text-white uppercase">Parts disponibles à l'achat</h4>
 
             <div className="mt-[20px] flex flex-col p-4 bg-[#1c1c24] rounded-[10px]">
                 <div className="mt-[20px] flex flex-col gap-4">
@@ -177,7 +180,27 @@ console.log('Sylver Sales Orders:', testSalesOrders);
                 ))}
               </div>
             </div>
+
+            <div className="mt-[20px] flex flex-col p-4 bg-[#1c1c24] rounded-[10px]">
+              <div className="mt-[20px] flex flex-col gap-4">
+                <FormField 
+                  placeholder="nombre de parts"
+                  inputType="text"
+                  value={sharesAmount}
+                  handleChange={(e) => setBuySharesAmount(e.target.value)}
+                />
+
+                <CustomButton 
+                  btnType="button"
+                  title="Acheter des parts"
+                  styles="w-full bg-[#8c6dfd]"
+                  handleClick={handleBuyShareSale}
+                />
+              </div>
+            </div>
+
           </div>
+
           <div>
             <h4 className="font-epilogue font-semibold text-[18px] text-white uppercase">Mes ventes</h4>
 
