@@ -20,3 +20,10 @@ export const checkIfImage = (url, callback) => {
   img.onload = () => callback(true);
   img.onerror = () => callback(false);
 };
+
+export const formatWalletAddress = (address) => {
+  const addressLength = address.length;
+  const startChars = address.substr(0, 6);
+  const endChars = address.substr(addressLength - 4, 4);
+  return `${startChars}...${endChars}`;
+};

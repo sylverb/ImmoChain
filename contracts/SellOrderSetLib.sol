@@ -127,13 +127,13 @@ library SellOrderSetLib {
     * @param index uint256 The index of the sell order to retrieve
     * @return SellOrder The sell order at the specified index
     */
-   function orderAtIndex(Set storage self, uint256 index)
+/*   function orderAtIndex(Set storage self, uint256 index)
        internal
        view
        returns (SellOrder storage)
    {
        return self.keyList[index];
-   }
+   }*/
 
 
    /**
@@ -157,9 +157,9 @@ library SellOrderSetLib {
     *
     * @param self Set The set of sell orders to nuke
     */
-   function nukeSet(Set storage self) public {
+/*   function nukeSet(Set storage self) public {
        delete self.keyList;
-   }
+   }*/
 
 
    /**

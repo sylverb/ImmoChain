@@ -3,6 +3,7 @@ pragma solidity 0.8.18;
 
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import "./SellOrderSetLib.sol";
+import "./ScpiNFT.sol";
 
 /**
  * @dev     Contract to implement buying and selling of ERC1155 SCPI shares
@@ -11,6 +12,9 @@ import "./SellOrderSetLib.sol";
 contract Marketplace {
     // Use SellOrderSetLib for SellOrderSetLib.Set operations
     using SellOrderSetLib for SellOrderSetLib.Set;
+
+    // Mapping to store sellers money to allow them to claim it
+    mapping(address => uint256) private sellersWallets;
 
     // Mapping to store sell orders for different NFTs
     mapping(bytes32 => SellOrderSetLib.Set) private orders;
@@ -37,16 +41,36 @@ contract Marketplace {
         uint256 nftId
     );
 
+    // Event to indicate a token is sold
+    event TokensSold(
+        // Account address of the token seller
+        address from,
+        // Account address of the token buyer
+        address to,
+        // NFT id
+        uint256 nftId,
+        // Number of tokens sold
+        uint256 tokenCount,
+        // Purchase amount
+        uint256 puchaseAmount
+    );
+
     // We have to get the ScpiNFT contract address
     constructor (address _scpiNftContract) {
         scpiNftContract = _scpiNftContract;
+    }
+
+    receive() external payable {
+    }
+
+    fallback() external payable {
     }
 
     /**
      * createSellOrder - Creates a sell order for the NFT specified by `nftId`.
      *
      * @param nftId          - The ID of the NFT to be sold.
-     * @param unitPrice      - The price of a single NFT in wei.
+     * @param unitPrice      - The price of a single NFT in % of the public price.
      * @param noOfTokensForSale - The number of NFTs being sold.
      */
 
@@ -56,7 +80,7 @@ contract Marketplace {
         uint256 noOfTokensForSale
     ) external {
         // Require that the unit price of each token must be greater than 0
-        require(unitPrice > 0, "Marketplace: Price must be greater than 0");
+        require((unitPrice >= 30) && (unitPrice <= 100), "Marketplace: price is a % and can't be lower than 30");
 
         // Get the unique identifier for the sell order
         bytes32 orderId = _getOrdersMapId(nftId);
@@ -123,6 +147,86 @@ contract Marketplace {
     }
 
     /**
+     * createBuyOrder - Create a buy order for an NFT token.
+     *
+     * @param nftId - unique identifier of the NFT token.
+     * @param noOfTokensToBuy - number of tokens the buyer wants to purchase.
+     * @param tokenOwner - address of the seller who is selling the token.
+     */
+
+    function createBuyOrder(
+        uint256 nftId,
+        uint256 noOfTokensToBuy,
+        address payable tokenOwner
+    ) external payable {
+        // Get the unique identifier for the order set of the given NFT token.
+        bytes32 orderId = _getOrdersMapId(nftId);
+
+        // Get the sell order set of the given NFT token.
+        SellOrderSetLib.Set storage nftOrders = orders[orderId];
+
+        // Check if the token owner has a sell order for the given NFT.
+        require(
+            nftOrders.orderExistsForAddress(tokenOwner),
+            "Marketplace: Given token is not listed for sale by the owner"
+        );
+
+        // Get the sell order for the given NFT by the token owner.
+        SellOrderSetLib.SellOrder storage sellOrder = nftOrders.orderByAddress(
+            tokenOwner
+        );
+
+        // Validate that the required buy quantity is available for sale
+        require(
+            sellOrder.quantity >= noOfTokensToBuy,
+            "Marketplace: Attempting to buy more than available for sale"
+        );
+
+        // Get the ScpiNFT contract
+        ScpiNFT tokenContract = ScpiNFT(scpiNftContract);
+
+        // Validate that the buyer provided enough funds to make the purchase.
+        uint256 publicPrice = tokenContract.getPublicSharePrice(nftId);
+        uint256 buyPrice = (sellOrder.unitPrice * publicPrice * noOfTokensToBuy)/100;
+        require(
+            msg.value >= buyPrice,
+            "Marketplace: Less ETH provided for the purchase"
+        );
+
+        // Assign the specified value of Ether to the token seller
+        sellersWallets[tokenOwner] += msg.value;
+
+        // Transfer the specified number of tokens from the token owner to the buyer.
+        tokenContract.safeTransferFrom(
+            tokenOwner,
+            msg.sender,
+            nftId,
+            noOfTokensToBuy,
+            ""
+        );
+
+        /**
+         * Check if the quantity of tokens being sold in the sell order is equal to the number of tokens the buyer wants to purchase.
+         * If true, it removes the sell order from the list of NFT orders.
+         * Otherwise, update the sell order by subtracting the number of tokens bought from the total quantity being sold.
+         */
+        if (sellOrder.quantity == noOfTokensToBuy) {
+            nftOrders.remove(sellOrder);
+        } else {
+            sellOrder.quantity -= noOfTokensToBuy;
+        }
+
+        // Emit TokensSold event on successfull purchase
+        emit TokensSold(
+            tokenOwner,
+            msg.sender,
+            nftId,
+            noOfTokensToBuy,
+            msg.value
+        );
+    }
+
+    /**
      * getOrders: This function retrieves the sell orders for the given token
      * @param nftId unique identifier of the token
      * @return An array of sell orders for the given token
@@ -172,4 +276,17 @@ contract Marketplace {
     {
         return keccak256(abi.encodePacked(nftId));
     }
+
+    function withdrawFunds() external {
+        uint256 amount = sellersWallets[msg.sender];
+        require(amount > 0, "No funds available to withdraw");
+
+        sellersWallets[msg.sender] = 0;
+        payable(msg.sender).transfer(amount);
+    }
+
+    function getFundsInfo() external view returns (uint256) {
+        return sellersWallets[msg.sender];
+    }
+
 }

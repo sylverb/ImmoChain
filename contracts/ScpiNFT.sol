@@ -110,7 +110,7 @@ contract ScpiNFT is ERC1155, Ownable {
         _setScpiSharesAmount(newItemId, _sharesAmount);
         _setScpiPublicPrice(newItemId, _publicPrice);
         _setScpiAddress(newItemId, _recipient);
-        emit RegisterNewScpi(newItemId, _scpiName, _publicPrice, _scpiURI, _sharesAmount);
+        emit RegisterNewScpi(newItemId, _scpiName, _publicPrice, _scpiURI, _sharesAmount, _recipient);
         return newItemId;
     }
 
@@ -127,8 +127,22 @@ contract ScpiNFT is ERC1155, Ownable {
         uint _publicPrice
     ) public {
         require (msg.sender == _scpiInfos[_tokenId].scpiAddress,"Only SCPI owner is allowed to update share price");
+        require (_tokenId <= _tokenIds.current(),"SCPI is not existing");
+        require (_publicPrice > 0, "Public price shall be greater than 0");
         _scpiInfos[_tokenId].publicPrice  = _publicPrice;
         emit SetNewSharePrice(_tokenId,_publicPrice);
+    }
+
+    /**
+     * @dev     Get public price for a share.
+     * @param   _tokenId  .
+     * @return  uint256  .
+     */
+    function getPublicSharePrice(
+        uint _tokenId
+    ) public view returns (uint256) {
+        require (_tokenId <= _tokenIds.current(),"SCPI is not existing");
+        return _scpiInfos[_tokenId].publicPrice;
     }
 
     /**
@@ -176,6 +190,6 @@ contract ScpiNFT is ERC1155, Ownable {
     }
 
     /* Events */
-    event RegisterNewScpi(uint256 companyId, string name, uint publicPrice, string uri, uint amount);
+    event RegisterNewScpi(uint256 companyId, string name, uint publicPrice, string uri, uint amount, address recipient);
     event SetNewSharePrice(uint256 companyId, uint newPrice);
 }

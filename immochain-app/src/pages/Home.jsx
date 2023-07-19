@@ -25,7 +25,7 @@ const Home = () => {
 
   return (
     <DisplayScpi 
-      title="All SCPI"
+      title="Liste des SCPI"
       isLoading={isLoading}
       scpiList={scpiList}
     />

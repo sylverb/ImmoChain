@@ -8,7 +8,7 @@ const ScpiCard = ({ title, publicPrice, image, handleClick }) => {
       <div className="flex flex-col p-4">
         <div className="block">
           <h3 className="font-epilogue font-semibold text-[16px] text-white text-left leading-[26px] truncate">{title}</h3>
-          <p className="mt-[5px] font-epilogue font-normal text-[#808191] text-left leading-[18px] truncate">Public Price : {publicPrice}€</p>
+          <p className="mt-[5px] font-epilogue font-normal text-[#808191] text-left leading-[18px] truncate">Prix public : {publicPrice} ETH</p>
         </div>
       </div>
     </div>

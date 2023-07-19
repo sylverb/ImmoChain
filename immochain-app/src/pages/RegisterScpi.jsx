@@ -60,7 +60,7 @@ const RegisterScpi = () => {
         <div className="flex flex-wrap gap-[40px]">
           <FormField 
             labelName="Adresse de la SCPI"
-            placeholder="0x"
+            placeholder="0x..."
             inputType="text"
             value={form.address}
             handleChange={(e) => handleFormFieldChange('address', e)}
@@ -76,8 +76,8 @@ const RegisterScpi = () => {
             handleChange={(e) => handleFormFieldChange('sharesAmount', e)}
           />
           <FormField 
-            labelName="Prix public d'une part de la SCPI"
-            placeholder="Prix courant de la part en $Matic"
+            labelName="Prix public d'une part de la SCPI en Ethers"
+            placeholder="Prix courant de la part en Ethers"
             inputType="text"
             value={form.sharePublicPrice}
             handleChange={(e) => handleFormFieldChange('sharePublicPrice', e)}

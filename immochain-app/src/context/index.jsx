@@ -1,6 +1,6 @@
 import React, { useContext, createContext } from 'react';
 
-import { useAddress, useContract, useMetamask, useContractWrite } from '@thirdweb-dev/react';
+import { useAddress, useDisconnect, useContract, useMetamask, useContractWrite } from '@thirdweb-dev/react';
 import { ethers } from 'ethers';
 import { scpiNftContractAddress, scpiNftContractAbi } from '../../contract';
 import { marketplaceContractAddress, marketplaceContractAbi } from '../../contract';
@@ -10,29 +10,11 @@ const StateContext = createContext();
 export const StateContextProvider = ({ children }) => {
   const { contract : scpiNftContract } = useContract(scpiNftContractAddress, scpiNftContractAbi);
   const { contract : marketplaceContract } = useContract(marketplaceContractAddress, marketplaceContractAbi);
-  const { mutateAsync: createCampaign } = useContractWrite(scpiNftContract, 'createCampaign');
 
   const address = useAddress();
   const connect = useMetamask();
+  const disconnect = useDisconnect();
 
-  const publishCampaign = async (form) => {
-    try {
-      const data = await createCampaign({
-        args: [
-          address, // owner
-          form.title, // title
-          form.description, // description
-          form.target,
-          new Date(form.deadline).getTime(), // deadline,
-          form.image,
-        ],
-      });
-
-      console.log("contract call success", data)
-    } catch (error) {
-      console.log("contract call failure", error)
-    }
-  }
   /*************************************************/
   /* SCPI NFT actions                           */
   /*************************************************/
@@ -45,7 +27,7 @@ export const StateContextProvider = ({ children }) => {
           form.name, // name
           form.sharesAmount, // shares amount
           form.image,
-          form.sharePublicPrice);
+          ethers.utils.parseEther(form.sharePublicPrice));
 
       console.log("contract call success", data)
     } catch (error) {
@@ -58,10 +40,11 @@ export const StateContextProvider = ({ children }) => {
     console.log("+++getScpiInfos events = "+events.length);
     const parsedInfos = events.map((event, i) => ({
       title: event.data.name,
-      publicPrice: event.data.publicPrice.toNumber(),
+      publicPrice: ethers.utils.formatUnits(event.data.publicPrice, "ether"),
       image: event.data.uri,
       totalShares: event.data.amount.toNumber(),
-      pId: event.data.companyId.toNumber()
+      pId: event.data.companyId.toNumber(),
+      scpiAddress: event.data.recipient
     }));
 
     return parsedInfos;
@@ -80,7 +63,22 @@ export const StateContextProvider = ({ children }) => {
       console.log("getSharesBalance call failure", error)
       return 0
     }
+  }
 
+  const transferScpiShares = async (id,amount,from,to) => {
+    try {
+      console.log("transferScpiShares id="+id +" amount="+amount+" from="+from+" to="+to)
+      const data = await scpiNftContract.call('safeTransferFrom',
+          from,
+          to,
+          id,
+          amount,
+          ethers.constants.HashZero)
+
+      console.log("contract call success", data)
+    } catch (error) {
+      console.log("contract call failure", error)
+    }
   }
 
   /*************************************************/
@@ -166,7 +164,9 @@ export const StateContextProvider = ({ children }) => {
         scpiNftContract,
         marketplaceContract,
         connect,
+        disconnect,
         createScpi,
+        transferScpiShares,
         getSharesBalance,
         getScpiInfos,
         createSaleOrder,

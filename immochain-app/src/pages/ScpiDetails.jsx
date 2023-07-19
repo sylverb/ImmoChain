@@ -5,12 +5,11 @@ import { ethers } from 'ethers';
 import { useStateContext } from '../context';
 import { CountBox, CustomButton, FormField, Loader } from '../components';
 import { calculateBarPercentage } from '../utils';
-import { thirdweb } from '../assets';
 import { useAddress } from '@thirdweb-dev/react';
 
 const ScpiDetails = () => {
   const { state } = useLocation();
-  const { getSalesOrders, createSaleOrder, cancelSaleOrders, scpiNftContract, marketplaceContract, getSharesBalance, address } = useStateContext();
+  const { getSalesOrders, createSaleOrder, cancelSaleOrders, scpiNftContract, marketplaceContract, getSharesBalance, address, transferScpiShares } = useStateContext();
 
   const [isLoading, setIsLoading] = useState(false);
   const [sharesAmount, setSharesAmount] = useState();
@@ -18,6 +17,7 @@ const ScpiDetails = () => {
   const [sellPrice, setSellPrice] = useState(100);
   const [salesOrders, setSalesOrders] = useState([]);
   const [rawSalesOrders, setRawSalesOrders] = useState([]);
+  const [scpiDestAddress, setScpiDestAddress] = useState([]);
   const [myOrders, setMyOrders] = useState([]);
   const [balance, setBalance] = useState();
 
@@ -26,23 +26,6 @@ const ScpiDetails = () => {
   const fetchSalesOrders = async () => {
     const orders = await getSalesOrders(state.pId);
     console.log("orders = "+JSON.stringify(orders));
-
-/*    const testSalesOrders = [];
-
-for (let i = 0; i < 30; i++) {
-  const unitPrices = [80, 85, 90, 100];
-  const randomIndex = Math.floor(Math.random() * unitPrices.length);
-  const unitPrice = unitPrices[randomIndex];
-  const order = {
-    listedBy: `Seller ${i}`,
-    quantity: Math.floor(Math.random() * 10) + 1,
-    unitPrice: unitPrice
-  };
-  testSalesOrders.push(order);
-}
-console.log('Sylver Sales Orders:', testSalesOrders);
-    const orders = testSalesOrders;
-*/
 
     setMyOrders(await mySalesOrders(orders));
     setRawSalesOrders(orders);
@@ -111,26 +94,35 @@ console.log('Sylver Sales Orders:', testSalesOrders);
     setIsLoading(false);
   }
   
+  const handleSendShares = async () => {
+    setIsLoading(true);
+
+    await transferScpiShares(state.pId,sharesAmount,userAddress,scpiDestAddress)
+
+    setIsLoading(false);
+  }
+
   return (
     <div>
       {isLoading && <Loader />}
 
       <div className="w-full flex md:flex-row flex-col mt-10 gap-[30px]">
         <div className="flex-1 flex-col">
-          <img src={state.image} alt="campaign" className="w-full h-[410px] object-cover rounded-xl"/>
-          <div className="relative w-full h-[5px] bg-[#3a3a43] mt-2">
-            <div className="absolute h-full bg-[#4acd8d]" style={{ width: `${calculateBarPercentage(state.target, state.amountCollected)}%`, maxWidth: '100%'}}>
-            </div>
-          </div>
+          <img src={state.image} alt="scpi" className="w-full h-[410px] object-cover rounded-xl"/>
         </div>
 
-        <div className="flex md:w-[150px] w-full flex-wrap justify-between gap-[30px]">
-          <CountBox title="Nombre de parts total" value={state.totalShares} />
+        <div className="flex-1">
           <CountBox title="Nombre de parts possédées" value={balance} />
-          <CountBox title="Prix public des parts" value={state.publicPrice} />
+          <CountBox title="Prix public des parts" value={state.publicPrice}/>
+        </div>
+      </div>
+      <div className="flex-1">
+        <div className="relative w-full h-[3px] mt-2">
+            <h4 className="font-epilogue font-semibold text-[45px] text-white">{state.title}</h4>   
         </div>
       </div>
 
+      {userAddress !== state.scpiAddress && (
       <div className="mt-[60px] flex lg:flex-row flex-col gap-5">
       <div className="flex-1">
           <h4 className="font-epilogue font-semibold text-[18px] text-white uppercase">Mettre des parts en vente</h4>   
@@ -172,12 +164,22 @@ console.log('Sylver Sales Orders:', testSalesOrders);
 
             <div className="mt-[20px] flex flex-col p-4 bg-[#1c1c24] rounded-[10px]">
                 <div className="mt-[20px] flex flex-col gap-4">
-                {Object.entries(salesOrders).map(([unitPrice, orders]) => (
-                  <div key={unitPrice} className="flex justify-between items-center gap-4">
-                    <p className="font-epilogue font-normal text-[16px] text-[#b2b3bd] leading-[26px] break-ll">{Math.floor(unitPrice*state.publicPrice/100)}</p>
-                    <p className="font-epilogue font-normal text-[16px] text-[#b2b3bd] leading-[26px] break-ll">{calculateTotalQuantity(salesOrders,unitPrice)}</p>
-                  </div>
-                ))}
+                <table className="table-auto">
+                  <thead>
+                    <tr>
+                      <th className="font-epilogue font-normal text-[16px] text-[#b2b3bd]">Prix</th>
+                      <th className="font-epilogue font-normal text-[16px] text-[#b2b3bd]">Quantité</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Object.entries(salesOrders).map(([unitPrice, orders]) => (
+                      <tr>
+                        <td className="font-epilogue font-normal text-[16px] text-[#b2b3bd] text-center">{(unitPrice*state.publicPrice/100)} ETH</td>
+                        <td className="font-epilogue font-normal text-[16px] text-[#b2b3bd] text-center">{calculateTotalQuantity(salesOrders,unitPrice)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
 
@@ -186,7 +188,7 @@ console.log('Sylver Sales Orders:', testSalesOrders);
                 <FormField 
                   placeholder="nombre de parts"
                   inputType="text"
-                  value={sharesAmount}
+                  value={buySharesAmount}
                   handleChange={(e) => setBuySharesAmount(e.target.value)}
                 />
 
@@ -201,33 +203,87 @@ console.log('Sylver Sales Orders:', testSalesOrders);
 
           </div>
 
+          {Object.values(myOrders).length > 0 ? (
           <div>
             <h4 className="font-epilogue font-semibold text-[18px] text-white uppercase">Mes ventes</h4>
 
             <div className="mt-[20px] flex flex-col p-4 bg-[#1c1c24] rounded-[10px]">
                 <div className="mt-[20px] flex flex-col gap-4">
-                {Object.values(myOrders).map((order) => (
-                <div key={order.unitPrice} className="flex justify-between items-center gap-4">
-                  <p className="font-epilogue font-normal text-[16px] text-[#b2b3bd] leading-[26px] break-ll">
-                    {Math.floor(order.unitPrice * state.publicPrice / 100)}
-                  </p>
-                  <p className="font-epilogue font-normal text-[16px] text-[#b2b3bd] leading-[26px] break-ll">
-                    {order.quantity}
-                  </p>
-                  <CustomButton 
-                      btnType="button"
-                      title="Annuler"
-                      styles="w-100px bg-[#8c6dfd]"
-                      handleClick={() => handleCancelShareSale()}
-                    />
-                  </div>
-                ))}
+                <table className="table-auto">
+                  <thead>
+                    <tr>
+                      <th className="font-epilogue font-normal text-[16px] text-[#b2b3bd]">Prix</th>
+                      <th className="font-epilogue font-normal text-[16px] text-[#b2b3bd]">Quantité</th>
+                      <th className="font-epilogue font-normal text-[16px] text-[#b2b3bd]"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Object.values(myOrders).map((order) => (
+                    <tr>
+                      <td className="font-epilogue font-normal text-[16px] text-[#b2b3bd] text-center">
+                        {(order.unitPrice * state.publicPrice / 100)} ETH
+                      </td>
+                      <td className="font-epilogue font-normal text-[16px] text-[#b2b3bd] text-center">
+                        {order.quantity}
+                      </td>
+                      <td className="text-center">
+                        <CustomButton 
+                          btnType="button"
+                          title="Annuler"
+                          styles="w-100px bg-[#8c6dfd]"
+                          handleClick={() => handleCancelShareSale()}
+                        />
+                      </td>
+                    </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
+          ) : null}
         </div>
       </div>
-    </div>
+     )}
+      {userAddress === state.scpiAddress && (
+      <div className="mt-[60px] flex lg:flex-row flex-col gap-5">
+      <div className="flex-1">
+          <h4 className="font-epilogue font-semibold text-[18px] text-white uppercase">Menu gestionnaire de SCPI</h4>   
+
+          <div className="mt-[20px] flex flex-col p-4 bg-[#1c1c24] rounded-[10px]">
+            <p className="font-epilogue fount-medium text-[20px] leading-[30px] text-center text-[#808191]">
+              Envoi de parts vers un investisseur
+            </p>
+            <div className="mt-[30px]">
+              <FormField 
+                labelName="Nombre de parts"
+                placeholder=""
+                inputType="number"
+                step="1"
+                value={sharesAmount}
+                handleChange={(e) => setSharesAmount(e.target.value)}
+              />
+
+              <FormField 
+                labelName="Adresse de l'investisseur"
+                placeholder="0x..."
+                inputType="text"
+                value={scpiDestAddress}
+                handleChange={(e) => setScpiDestAddress(e.target.value)}
+              />
+
+              <CustomButton 
+                btnType="button"
+                title="Envoyer les parts"
+                styles="w-full bg-[#8c6dfd]"
+                handleClick={handleSendShares}
+              />
+            </div>
+          </div>
+        </div>
+        </div>
+      )}
+     </div>
   )
 }
 
