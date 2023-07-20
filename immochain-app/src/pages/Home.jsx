@@ -6,22 +6,30 @@ import { useStateContext } from '../context'
 const Home = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [scpiList, setScpiList] = useState([]);
+  const [hasScpiListChanged, setHasScpiListChanged] = useState(false); // Nouvel état pour suivre les changements de scpiList
 
   const { address, scpiNftContract, marketplaceContract, getScpiInfos } = useStateContext();
 
   const fetchScpi = async () => {
     setIsLoading(true);
     const data = await getScpiInfos();
-    const updatedList = [...scpiList, ...data];
-    const sortedData = updatedList.sort((a, b) => a.title.localeCompare(b.title));
+    const newData = data.filter((scpi) => !scpiList.some((prevScpi) => prevScpi.id === scpi.id));
 
-    setScpiList(prevScpiList => [...prevScpiList, ...data]);
+    setScpiList((prevScpiList) => [...prevScpiList, ...newData]);
     setIsLoading(false);
+    setHasScpiListChanged(true);
   }
 
   useEffect(() => {
     if(scpiNftContract) fetchScpi();
   }, [address, scpiNftContract, marketplaceContract]);
+
+  useEffect(() => {
+    if (hasScpiListChanged) {
+      const sortedData = [...scpiList].sort((a, b) => a.title.localeCompare(b.title));
+      setScpiList(sortedData);
+      setHasScpiListChanged(false); // Réinitialiser hasScpiListChanged après le tri
+    }  }, [scpiList]);
 
   return (
     <DisplayScpi 
