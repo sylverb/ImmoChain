@@ -19,7 +19,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
  *          - It can't be sold at a higher price than public price
  *          - It can't be send from one owner from another directly
  *          - It can't be "sold for free"
- *          - Seller and buyer are required to have a valid KYC for the SCPI owning the shares
+ *          - Seller and buyer are required to have a valid KYC for the SCPI owning the shares (not yet implemented)
  * 
  *          Because of these constraints, the shares will have to be sold on a dedicated and controlled
  *          marketplace. The address of the marketplace shall be set using setMarketplaceAddress function.

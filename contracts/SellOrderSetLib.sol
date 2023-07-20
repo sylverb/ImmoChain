@@ -38,7 +38,7 @@ library SellOrderSetLib {
        // Check if the SellOrder is already in the Set.
        require(
            !exists(self, key),
-           "OrderSetLib(103) - Key already exists in the set."
+           "OrderSetLib(103) - Key already exists in the set"
        );
        // If all checks pass, add the SellOrder to the keyList array.
        self.keyList.push(key);
@@ -49,7 +49,7 @@ library SellOrderSetLib {
    function remove(Set storage self, SellOrder memory key) internal {
        require(
            exists(self, key),
-           "OrderSetLib(104) - Sell Order does not exist in the set."
+           "OrderSetLib(104) - Sell Order does not exist in the set"
        );
 
 

@@ -10,6 +10,9 @@ import "./ScpiNFT.sol";
  */
 
 contract Marketplace {
+    /********************************************************/
+    /* Local storage                                        */
+    /********************************************************/
     // Use SellOrderSetLib for SellOrderSetLib.Set operations
     using SellOrderSetLib for SellOrderSetLib.Set;
 
@@ -19,8 +22,12 @@ contract Marketplace {
     // Mapping to store sell orders for different NFTs
     mapping(bytes32 => SellOrderSetLib.Set) private orders;
 
+    // Contract of the scpiNft we will interact with
     address private scpiNftContract;
 
+    /********************************************************/
+    /* Marketplace events                                   */
+    /********************************************************/
     // Event to indicate a token is listed for sale
     event ListedForSale(
         // Account address of the token owner
