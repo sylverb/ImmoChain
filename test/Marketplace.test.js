@@ -47,7 +47,7 @@ describe('Test Marketplace', function() {
             expect(userOrder.quantity).to.equal(0)
             expect(userOrder.unitPrice).to.equal(0)
 
-            const findEvent = await marketplace.connect(user1).createSellOrder(1,99,6000)
+            const findEvent = await marketplace.connect(user1).createSellOrder(1,85,6000)
             // Check receiving ListedForSale event
             await expect(findEvent)
             .to.emit(
@@ -58,7 +58,7 @@ describe('Test Marketplace', function() {
                 user1.address,
                 1,
                 6000,
-                99
+                85
             )
 
             // Check all orders
@@ -66,28 +66,30 @@ describe('Test Marketplace', function() {
             expect(allOrders.length).to.equal(1)
             expect(allOrders[0].listedBy).to.equal(user1.address)
             expect(allOrders[0].quantity).to.equal(6000)
-            expect(allOrders[0].unitPrice).to.equal(99)
+            expect(allOrders[0].unitPrice).to.equal(85)
 
             // Check order for user1
             userOrder = await marketplace.connect(user1).getOrderByAddress(1,user1.address)
             expect(userOrder.listedBy).to.equal(user1.address)
             expect(userOrder.quantity).to.equal(6000)
-            expect(userOrder.unitPrice).to.equal(99)
+            expect(userOrder.unitPrice).to.equal(85)
         })
 
         it('shall not allow user1 to sell more NFTs than owned', async function() {
             await expect(marketplace.connect(user1).createSellOrder(1,100,6001)).to.be.revertedWith('Marketplace: Insufficient token balance')
         })
 
-        it('Marketplace: price is a % and can\'t be lower than 30', async function() {
-            await expect(marketplace.connect(user1).createSellOrder(1,0,60)).to.be.revertedWith('Marketplace: price is a % and can\'t be lower than 30')
-            await expect(marketplace.connect(user1).createSellOrder(1,29,60)).to.be.revertedWith('Marketplace: price is a % and can\'t be lower than 30')
-            await expect(marketplace.connect(user1).createSellOrder(1,101,60)).to.be.revertedWith('Marketplace: price is a % and can\'t be lower than 30')
+        it('Marketplace: price is a % between 30 and 100% with a 5 points step', async function() {
+            let quantity = 60
+            await expect(marketplace.connect(user1).createSellOrder(1,86,quantity)).to.be.revertedWith('Marketplace: price is a % between 30 and 100% with a 5 points step')
+            await expect(marketplace.connect(user1).createSellOrder(1,0,quantity)).to.be.revertedWith('Marketplace: price is a % between 30 and 100% with a 5 points step')
+            await expect(marketplace.connect(user1).createSellOrder(1,25,quantity)).to.be.revertedWith('Marketplace: price is a % between 30 and 100% with a 5 points step')
+            await expect(marketplace.connect(user1).createSellOrder(1,105,quantity)).to.be.revertedWith('Marketplace: price is a % between 30 and 100% with a 5 points step')
         })
 
         it('shall not allow the same user to set 2 different sell orders (this will change)', async function() {
-            await marketplace.connect(user1).createSellOrder(1,99,1000)
-            await expect(marketplace.connect(user1).createSellOrder(1,99,1000)).to.be.revertedWith('Marketplace: Token is already listed for sale by the given owner')
+            await marketplace.connect(user1).createSellOrder(1,85,1000)
+            await expect(marketplace.connect(user1).createSellOrder(1,85,1000)).to.be.revertedWith('Marketplace: Token is already listed for sale by the given owner')
         })
     })
 
@@ -108,13 +110,13 @@ describe('Test Marketplace', function() {
 
         it('shall allow user1 to cancel a sale order', async function() {
             // Create a sell order
-            await marketplace.connect(user1).createSellOrder(1,99,5000)
+            await marketplace.connect(user1).createSellOrder(1,95,5000)
 
             // Check order for user1
             let userOrder = await marketplace.connect(user1).getOrderByAddress(1,user1.address)
             expect(userOrder.listedBy).to.equal(user1.address)
             expect(userOrder.quantity).to.equal(5000)
-            expect(userOrder.unitPrice).to.equal(99)
+            expect(userOrder.unitPrice).to.equal(95)
 
             // Cancel order
             const findEvent = await marketplace.connect(user1).cancelSellOrder(1)
@@ -142,7 +144,7 @@ describe('Test Marketplace', function() {
 
         it('shall allow user to create a sell order after previous one has been cancelled', async function() {
             // Create a sell order
-            await marketplace.connect(user1).createSellOrder(1,99,5000)
+            await marketplace.connect(user1).createSellOrder(1,95,5000)
 
             // Cancel order
             await marketplace.connect(user1).cancelSellOrder(1)
@@ -152,7 +154,7 @@ describe('Test Marketplace', function() {
             expect(userOrder.quantity).to.equal(0)
             expect(userOrder.unitPrice).to.equal(0)
 
-            const findEvent = await marketplace.connect(user1).createSellOrder(1,99,6000)
+            const findEvent = await marketplace.connect(user1).createSellOrder(1,100,6000)
             // Check receiving ListedForSale event
             await expect(findEvent)
             .to.emit(
@@ -163,14 +165,14 @@ describe('Test Marketplace', function() {
                 user1.address,
                 1,
                 6000,
-                99
+                100
             )
 
             // Check order for user1
             userOrder = await marketplace.connect(user1).getOrderByAddress(1,user1.address)
             expect(userOrder.listedBy).to.equal(user1.address)
             expect(userOrder.quantity).to.equal(6000)
-            expect(userOrder.unitPrice).to.equal(99)
+            expect(userOrder.unitPrice).to.equal(100)
         })
     })
     describe('Buy SCPI shares', function() {
@@ -250,7 +252,7 @@ describe('Test Marketplace', function() {
 
         it('shall allow user2 to buy all shared sold by user1', async function() {
             scpiId = 1
-            const unitPrice = 99
+            const unitPrice = 95
             // Create a sell order
             await marketplace.connect(user1).createSellOrder(scpiId,unitPrice,5000)
 
@@ -288,7 +290,7 @@ describe('Test Marketplace', function() {
 
         it('shall reject if user2 does not pay enough', async function() {
             scpiId = 1
-            const unitPrice = 99
+            const unitPrice = 65
             // Create a sell order
             await marketplace.connect(user1).createSellOrder(scpiId,unitPrice,5000)
 
@@ -302,7 +304,7 @@ describe('Test Marketplace', function() {
 
         it('shall reject if user2 try to by tokens from not existing sell order', async function() {
             scpiId = 1
-            const unitPrice = 99
+            const unitPrice = 30
 
             // user 2 create a buy order
             const buyingSharesAmount = 5000
@@ -314,7 +316,7 @@ describe('Test Marketplace', function() {
 
         it('shall reject if user2 tries to buy more shared then sold by user1', async function() {
             scpiId = 1
-            const unitPrice = 99
+            const unitPrice = 40
             // Create a sell order
             await marketplace.connect(user1).createSellOrder(scpiId,unitPrice,10)
 

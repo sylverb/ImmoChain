@@ -86,8 +86,8 @@ contract Marketplace {
         uint256 unitPrice,
         uint256 noOfTokensForSale
     ) external {
-        // Require that the unit price of each token must be greater than 0
-        require((unitPrice >= 30) && (unitPrice <= 100), "Marketplace: price is a % and can't be lower than 30");
+        // Require that the unit price of each token must be between 30 and 100% with a 5 points step
+        require((unitPrice >= 30) && (unitPrice <= 100) && (unitPrice % 5) == 0, "Marketplace: price is a % between 30 and 100% with a 5 points step");
 
         // Get the unique identifier for the sell order
         bytes32 orderId = _getOrdersMapId(nftId);
