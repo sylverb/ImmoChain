@@ -2,7 +2,6 @@
 pragma solidity 0.8.18;
 
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
-import "./SellOrderSetLib.sol";
 import "./ScpiNFT.sol";
 
 /**
@@ -13,14 +12,38 @@ contract Marketplace {
     /********************************************************/
     /* Local storage                                        */
     /********************************************************/
-    // Use SellOrderSetLib for SellOrderSetLib.Set operations
-    using SellOrderSetLib for SellOrderSetLib.Set;
+    // We are storing data to be able to parse them by price set from the older to the newer
+
+    // SellOrder structure representing a sell order, containing the address of the seller, the quantity of tokens being sold, and the unit price of the tokens.
+    struct SellOrder {
+        address seller; // Address of the seller
+        uint256 quantity; // Quantity of tokens being sold
+        uint256 unitPrice; // Unit price of the tokens
+    }
+
+    struct OrderPrice {
+        uint256 price;
+        uint256 ordersByPriceId;
+    }
+
+    // Set structure containing a mapping of seller addresses to indices in the keyList array, and an array of SellOrders.
+    struct OrdersSet {
+        mapping(address => SellOrder[]) ordersListBySeller;
+        mapping(uint256 => SellOrder[]) ordersList;
+        OrderPrice[] priceIdTable;
+        uint256 currentPriceId;
+    }
+
+    /*************************************************************/
+
+    // Mapping pour stocker le nombre de NFT mis en vente par chaque utilisateur pour chaque nftId
+    mapping(address => mapping(uint256 => uint256)) private userSellCounts;
 
     // Mapping to store sellers money to allow them to claim it
     mapping(address => uint256) private sellersWallets;
 
     // Mapping to store sell orders for different NFTs
-    mapping(bytes32 => SellOrderSetLib.Set) private orders;
+    mapping(uint256 => OrdersSet) private orders;
 
     // Contract of the scpiNft we will interact with
     address private scpiNftContract;
@@ -89,35 +112,46 @@ contract Marketplace {
         // Require that the unit price of each token must be between 30 and 100% with a 5 points step
         require((unitPrice >= 30) && (unitPrice <= 100) && (unitPrice % 5) == 0, "Marketplace: price is a % between 30 and 100% with a 5 points step");
 
-        // Get the unique identifier for the sell order
-        bytes32 orderId = _getOrdersMapId(nftId);
-
-        // Get the sell order set for the given NFT
-        SellOrderSetLib.Set storage nftOrders = orders[orderId];
-
-        // Require that the token is not already listed for sale by the same owner
-        require(
-            !nftOrders.orderExistsForAddress(msg.sender),
-            "Marketplace: Token is already listed for sale by the given owner"
-        );
-
         // Get the ERC1155 contract
         IERC1155 tokenContract = IERC1155(scpiNftContract);
 
         // Require that the caller has sufficient balance of the NFT token
         require(
             tokenContract.balanceOf(msg.sender, nftId) >=
-                noOfTokensForSale,
+                noOfTokensForSale + userSellCounts[msg.sender][nftId],
             "Marketplace: Insufficient token balance"
         );
 
-        // Create a new sell order using the SellOrder constructor
-        SellOrderSetLib.SellOrder memory o = SellOrderSetLib.SellOrder(
-            msg.sender,
-            noOfTokensForSale,
-            unitPrice
-        );
-        nftOrders.insert(o);
+        // Update total sale count for user
+        userSellCounts[msg.sender][nftId] += noOfTokensForSale;
+
+        // Create a new sell order
+        // Get the sell order set for the given NFT
+        OrdersSet storage nftOrders = orders[nftId];
+
+        // Find the appropriate index to insert the new order price
+        uint256 indexToInsert = 0;
+        while (indexToInsert < nftOrders.priceIdTable.length && nftOrders.priceIdTable[indexToInsert].price < unitPrice) {
+            indexToInsert++;
+        }
+
+        // If the price doesn't exist, create a new entry in priceIdTable
+        if (indexToInsert == nftOrders.priceIdTable.length || nftOrders.priceIdTable[indexToInsert].price != unitPrice) {
+            nftOrders.priceIdTable.push();
+            // Shift elements to the right to make space for the new priceIdTable entry
+            for (uint256 i = nftOrders.priceIdTable.length - 1; i > indexToInsert; i--) {
+                nftOrders.priceIdTable[i] = nftOrders.priceIdTable[i - 1];
+            }
+            nftOrders.priceIdTable[indexToInsert] = OrderPrice(unitPrice, nftOrders.currentPriceId++);
+        }
+
+        SellOrder memory order = SellOrder(msg.sender, noOfTokensForSale, unitPrice);
+
+        // Add the order to ordersList
+        nftOrders.ordersList[unitPrice].push(order);
+
+        // Add the order to ordersListBySeller
+        nftOrders.ordersListBySeller[msg.sender].push(order);
 
         // Emit the 'ListedForSale' event to signal that a new NFT has been listed for sale
         emit ListedForSale(
@@ -134,20 +168,34 @@ contract Marketplace {
      * @param nftId ID of the NFT token to cancel the sell order for.
      */
     function cancelSellOrder(uint256 nftId) external {
-        // Get the unique identifier for the order set of the given NFT token.
-        bytes32 orderId = _getOrdersMapId(nftId);
-
         // Get the sell order set of the given NFT token.
-        SellOrderSetLib.Set storage nftOrders = orders[orderId];
+        OrdersSet storage nftOrders = orders[nftId];
 
         // Ensure that the sell order exists for the caller.
+        uint256 ordersCount = nftOrders.ordersListBySeller[msg.sender].length;
         require(
-            nftOrders.orderExistsForAddress(msg.sender),
+            ordersCount > 0,
             "Marketplace: Given token is not listed for sale by the owner"
         );
 
-        // Remove the sell order from the set.
-        nftOrders.remove(nftOrders.orderByAddress(msg.sender));
+        // Get last order
+        SellOrder memory order = nftOrders.ordersListBySeller[msg.sender][ordersCount-1];
+
+        // Remove the sell order from the orders sets.
+        nftOrders.ordersListBySeller[msg.sender].pop();
+        uint256 ordersCountByPrice = nftOrders.ordersList[order.unitPrice].length;
+        for (uint256 i = ordersCountByPrice-1; i >= 0; i--) {
+            if (nftOrders.ordersList[order.unitPrice][i].seller == msg.sender) {
+                for (uint256 j = i; j < ordersCountByPrice - 1; j++) {
+                    nftOrders.ordersList[order.unitPrice][j] = nftOrders.ordersList[order.unitPrice][j+1];
+                }
+                nftOrders.ordersList[order.unitPrice].pop();
+                break;
+            }
+        }
+
+        // Update total sale count for user
+        userSellCounts[msg.sender][nftId] -= order.quantity;
 
         // Emit an event indicating that the sell order has been unlisted.
         emit UnlistedFromSale(msg.sender, nftId);
@@ -158,79 +206,142 @@ contract Marketplace {
      *
      * @param nftId - unique identifier of the NFT token.
      * @param noOfTokensToBuy - number of tokens the buyer wants to purchase.
-     * @param tokenOwner - address of the seller who is selling the token.
      */
 
     function createBuyOrder(
         uint256 nftId,
-        uint256 noOfTokensToBuy,
-        address payable tokenOwner
+        uint256 noOfTokensToBuy
     ) external payable {
-        // Get the unique identifier for the order set of the given NFT token.
-        bytes32 orderId = _getOrdersMapId(nftId);
-
-        // Get the sell order set of the given NFT token.
-        SellOrderSetLib.Set storage nftOrders = orders[orderId];
-
-        // Check if the token owner has a sell order for the given NFT.
-        require(
-            nftOrders.orderExistsForAddress(tokenOwner),
-            "Marketplace: Given token is not listed for sale by the owner"
-        );
-
-        // Get the sell order for the given NFT by the token owner.
-        SellOrderSetLib.SellOrder storage sellOrder = nftOrders.orderByAddress(
-            tokenOwner
-        );
-
-        // Validate that the required buy quantity is available for sale
-        require(
-            sellOrder.quantity >= noOfTokensToBuy,
-            "Marketplace: Attempting to buy more than available for sale"
-        );
-
-        // Get the ScpiNFT contract
+        // Get the ScpiNFT contract & public price
         ScpiNFT tokenContract = ScpiNFT(scpiNftContract);
-
-        // Validate that the buyer provided enough funds to make the purchase.
         uint256 publicPrice = tokenContract.getPublicSharePrice(nftId);
-        uint256 buyPrice = (sellOrder.unitPrice * publicPrice * noOfTokensToBuy)/100;
-        require(
-            msg.value >= buyPrice,
-            "Marketplace: Less ETH provided for the purchase"
-        );
 
-        // Assign the specified value of Ether to the token seller
-        sellersWallets[tokenOwner] += msg.value;
+        OrdersSet storage nftOrders = orders[nftId];
+        uint256 remainingQuantity = noOfTokensToBuy;
+        uint256 availablePayment = msg.value;
 
-        // Transfer the specified number of tokens from the token owner to the buyer.
-        tokenContract.safeTransferFrom(
-            tokenOwner,
-            msg.sender,
-            nftId,
-            noOfTokensToBuy,
-            ""
-        );
+        uint256 ordersToDelete;
 
-        /**
-         * Check if the quantity of tokens being sold in the sell order is equal to the number of tokens the buyer wants to purchase.
-         * If true, it removes the sell order from the list of NFT orders.
-         * Otherwise, update the sell order by subtracting the number of tokens bought from the total quantity being sold.
-         */
-        if (sellOrder.quantity == noOfTokensToBuy) {
-            nftOrders.remove(sellOrder);
-        } else {
-            sellOrder.quantity -= noOfTokensToBuy;
+        // We will parse all the sale orders until we filled the noOfTokensToBuy
+        for (uint256 priceRangeIndex = 0; priceRangeIndex < nftOrders.priceIdTable.length; priceRangeIndex++) { // Parse sales orders from cheaper to most expensive
+            SellOrder[] storage ordersList = nftOrders.ordersList[nftOrders.priceIdTable[priceRangeIndex].price];
+            // Parse all sales in the price range
+            for (uint256 orderIndex = 0; orderIndex < ordersList.length; orderIndex++) {
+                SellOrder storage order = ordersList[orderIndex];
+                if (order.quantity > remainingQuantity) { // This will fill the request
+                    uint256 buyPrice = (order.unitPrice * publicPrice) / 100 * remainingQuantity;
+                    // Reduce total amount of sold tokens for user
+                    userSellCounts[order.seller][nftId] -= remainingQuantity;
+
+                    // Assign the specified value of Ether to the token owner
+                    require (availablePayment >= buyPrice,"Marketplace: Less ETH provided for the purchase");
+                    availablePayment-=buyPrice;
+                    sellersWallets[order.seller] += buyPrice;
+                    
+                    // Transfer the specified number of tokens from the token owner to the buyer.
+                    tokenContract.safeTransferFrom(
+                        order.seller,
+                        msg.sender,
+                        nftId,
+                        remainingQuantity,
+                        ""
+                    );
+
+                    // Emit TokensSold event on successfull purchase
+                    emit TokensSold(
+                        order.seller,
+                        msg.sender,
+                        nftId,
+                        remainingQuantity,
+                        msg.value
+                    );
+
+                    // This sell order will end filling the buy order
+                    order.quantity -= remainingQuantity;
+                    remainingQuantity = 0;
+                    updateOldestOrder(nftId,order.seller,order.unitPrice,order.quantity);
+                    break;
+                } else {
+                    // This sell order will partially fill the buy order
+                    uint256 buyPrice = (order.unitPrice * publicPrice) / 100 * order.quantity;
+                    remainingQuantity -= order.quantity;
+
+                    // Reduce total amount of sold tokens for user
+                    userSellCounts[order.seller][nftId] -= order.quantity;
+
+                    // Assign the specified value of Ether to the token owner
+                    require (availablePayment >= buyPrice,"Marketplace: Less ETH provided for the purchase");
+                    availablePayment-=buyPrice;
+                    sellersWallets[order.seller] += buyPrice;
+
+                    // Transfer the specified number of tokens from the token owner to the buyer.
+                    tokenContract.safeTransferFrom(
+                        order.seller,
+                        msg.sender,
+                        nftId,
+                        order.quantity,
+                        ""
+                    );
+
+                    // Emit TokensSold event on successfull purchase
+                    emit TokensSold(
+                        order.seller,
+                        msg.sender,
+                        nftId,
+                        order.quantity,
+                        buyPrice
+                    );
+
+                    // Remove this order from orders list
+                    deleteOldestOrder(nftId,order.seller,order.unitPrice);
+                    ordersToDelete++;
+                }
+            }
         }
 
-        // Emit TokensSold event on successfull purchase
-        emit TokensSold(
-            tokenOwner,
-            msg.sender,
-            nftId,
-            noOfTokensToBuy,
-            msg.value
-        );
+        require (remainingQuantity == 0, "Marketplace: Not enough shares in sale to fill the buy order");
+        require (availablePayment == 0, "Marketplace: Too much money sent");
+
+        // Delete orders that have been filled
+        for (uint256 priceRangeIndex = 0; priceRangeIndex < nftOrders.priceIdTable.length; priceRangeIndex++) { // Parse sales orders from cheaper to most expensive
+            SellOrder[] storage ordersList = nftOrders.ordersList[nftOrders.priceIdTable[priceRangeIndex].price];
+            if (ordersList.length <= ordersToDelete) {
+                ordersToDelete -= ordersList.length;
+                delete nftOrders.ordersList[nftOrders.priceIdTable[priceRangeIndex].price];
+            } else {
+                for (uint256 index; index < ordersList.length-ordersToDelete; index++) {
+                    ordersList[index] = ordersList[index+ordersToDelete];
+                }
+                while (ordersToDelete > 0) {
+                    ordersList.pop();
+                    ordersToDelete--;
+                }
+            }
+        }
+    }
+
+    function deleteOldestOrder(uint256 nftId, address seller, uint256 price) private {
+        SellOrder[] storage ordersList = orders[nftId].ordersListBySeller[seller];
+        for (uint256 i = 0; i < ordersList.length; i++) {
+            if (ordersList[i].unitPrice == price) {
+                // Remove the sell order from the ordersListBySeller and shift the remaining elements
+                for (uint256 j = i; j < ordersList.length - 1; j++) {
+                    ordersList[j] = ordersList[j+1];
+                }
+                ordersList.pop();
+                break;
+            }
+        }
+    }
+
+    function updateOldestOrder(uint256 nftId, address seller, uint256 price, uint256 newQuantity) private {
+        SellOrder[] storage ordersList = orders[nftId].ordersListBySeller[seller];
+        for (uint256 i = 0; i < ordersList.length; i++) {
+            if (ordersList[i].unitPrice == price) {
+                ordersList[i].quantity = newQuantity;
+                break;
+            }
+        }
     }
 
     /**
@@ -238,52 +349,35 @@ contract Marketplace {
      * @param nftId unique identifier of the token
      * @return An array of sell orders for the given token
      */
-    function getOrders(uint256 nftId)
+/*    function getOrders(uint256 nftId)
         external
         view
-        returns (SellOrderSetLib.SellOrder[] memory)
+        returns (SellOrder[] memory)
     {
         bytes32 orderId = _getOrdersMapId(nftId);
         return orders[orderId].allOrders();
+    }*/
+
+
+//    /**
+/*     * getOrderByAddress: Get the SellOrder of a token for a given owner
+     * @param nftId unique identifier of the token
+     * @param seller address of the owner
+     * @return Sell order of a token for the given owner
+     */
+    function getOrdersByAddress(
+        uint256 nftId,
+        address seller
+    ) public view returns (SellOrder[] memory) {
+        OrdersSet storage nftOrders = orders[nftId];
+
+        return nftOrders.ordersListBySeller[seller];
     }
 
     /**
-     * getOrderByAddress: Get the SellOrder of a token for a given owner
-     * @param nftId unique identifier of the token
-     * @param listedBy address of the owner
-     * @return Sell order of a token for the given owner
+     * @notice  .
+     * @dev     .
      */
-    function getOrderByAddress(
-        uint256 nftId,
-        address listedBy
-    ) public view returns (SellOrderSetLib.SellOrder memory) {
-        // Calculate the unique identifier for the order
-        bytes32 orderId = _getOrdersMapId(nftId);
-
-        // Get the SellOrderSet for the NFT
-        SellOrderSetLib.Set storage nftOrders = orders[orderId];
-
-        // Check if a SellOrder exists for the given owner
-        if (nftOrders.orderExistsForAddress(listedBy)) {
-            // Return the SellOrder for the given owner
-            return nftOrders.orderByAddress(listedBy);
-        }
-
-        // Else, return empty SellOrder
-        return SellOrderSetLib.SellOrder(address(0), 0, 0);
-    }
-
-    // _getOrdersMapId function generates the unique identifier for a given NFT id
-    // The identifier is used as the key to store the corresponding SellOrderSet in the `orders` mapping
-    // This helps to retrieve and manage the sell orders for a specific NFT efficiently.
-    function _getOrdersMapId(uint256 nftId)
-        internal
-        pure
-        returns (bytes32)
-    {
-        return keccak256(abi.encodePacked(nftId));
-    }
-
     function withdrawFunds() external {
         uint256 amount = sellersWallets[msg.sender];
         require(amount > 0, "No funds available to withdraw");

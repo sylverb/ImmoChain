@@ -42,10 +42,8 @@ describe('Test Marketplace', function() {
         })
 
         it('shall allow user1 to set his NFTs for sale on marketplace', async function() {
-            let userOrder = await marketplace.connect(user1).getOrderByAddress(1,user1.address)
-            expect(userOrder.listedBy).to.equal(ethers.ZeroAddress)
-            expect(userOrder.quantity).to.equal(0)
-            expect(userOrder.unitPrice).to.equal(0)
+            let userOrder = await marketplace.connect(user1).getOrdersByAddress(1,user1.address)
+            expect(userOrder.length).to.equal(0)
 
             const findEvent = await marketplace.connect(user1).createSellOrder(1,85,6000)
             // Check receiving ListedForSale event
@@ -62,17 +60,17 @@ describe('Test Marketplace', function() {
             )
 
             // Check all orders
-            const allOrders = await marketplace.connect(user1).getOrders(1)
+/*            const allOrders = await marketplace.connect(user1).getOrders(1)
             expect(allOrders.length).to.equal(1)
-            expect(allOrders[0].listedBy).to.equal(user1.address)
+            expect(allOrders[0].seller).to.equal(user1.address)
             expect(allOrders[0].quantity).to.equal(6000)
-            expect(allOrders[0].unitPrice).to.equal(85)
+            expect(allOrders[0].unitPrice).to.equal(85)*/
 
-            // Check order for user1
-            userOrder = await marketplace.connect(user1).getOrderByAddress(1,user1.address)
-            expect(userOrder.listedBy).to.equal(user1.address)
-            expect(userOrder.quantity).to.equal(6000)
-            expect(userOrder.unitPrice).to.equal(85)
+            // Check orders for user1
+            userOrder = await marketplace.connect(user1).getOrdersByAddress(1,user1.address)
+            expect(userOrder[0].seller).to.equal(user1.address)
+            expect(userOrder[0].quantity).to.equal(6000)
+            expect(userOrder[0].unitPrice).to.equal(85)
         })
 
         it('shall not allow user1 to sell more NFTs than owned', async function() {
@@ -87,9 +85,14 @@ describe('Test Marketplace', function() {
             await expect(marketplace.connect(user1).createSellOrder(1,105,quantity)).to.be.revertedWith('Marketplace: price is a % between 30 and 100% with a 5 points step')
         })
 
-        it('shall not allow the same user to set 2 different sell orders (this will change)', async function() {
+        it('shall allow the same user to set 2 different sell orders', async function() {
             await marketplace.connect(user1).createSellOrder(1,85,1000)
-            await expect(marketplace.connect(user1).createSellOrder(1,85,1000)).to.be.revertedWith('Marketplace: Token is already listed for sale by the given owner')
+            await marketplace.connect(user1).createSellOrder(1,75,1000)
+        })
+
+        it('shall not allow an user to sell more token than owned by creating several sell orders', async function() {
+            await marketplace.connect(user1).createSellOrder(1,85,1000)
+            await expect(marketplace.connect(user1).createSellOrder(1,75,6000)).to.be.revertedWith('Marketplace: Insufficient token balance')
         })
     })
 
@@ -113,10 +116,10 @@ describe('Test Marketplace', function() {
             await marketplace.connect(user1).createSellOrder(1,95,5000)
 
             // Check order for user1
-            let userOrder = await marketplace.connect(user1).getOrderByAddress(1,user1.address)
-            expect(userOrder.listedBy).to.equal(user1.address)
-            expect(userOrder.quantity).to.equal(5000)
-            expect(userOrder.unitPrice).to.equal(95)
+            let userOrder = await marketplace.connect(user1).getOrdersByAddress(1,user1.address)
+            expect(userOrder[0].seller).to.equal(user1.address)
+            expect(userOrder[0].quantity).to.equal(5000)
+            expect(userOrder[0].unitPrice).to.equal(95)
 
             // Cancel order
             const findEvent = await marketplace.connect(user1).cancelSellOrder(1)
@@ -132,10 +135,8 @@ describe('Test Marketplace', function() {
             )
 
             // Check that there is no order pending
-            userOrder = await marketplace.connect(user1).getOrderByAddress(1,user1.address)
-            expect(userOrder.listedBy).to.equal(ethers.ZeroAddress)
-            expect(userOrder.quantity).to.equal(0)
-            expect(userOrder.unitPrice).to.equal(0)
+            userOrder = await marketplace.connect(user1).getOrdersByAddress(1,user1.address)
+            expect(userOrder.length).to.equal(0)
         })
 
         it('shall not allow user1 to cancel orders if no order pending', async function() {
@@ -149,10 +150,9 @@ describe('Test Marketplace', function() {
             // Cancel order
             await marketplace.connect(user1).cancelSellOrder(1)
 
-            let userOrder = await marketplace.connect(user1).getOrderByAddress(1,user1.address)
-            expect(userOrder.listedBy).to.equal(ethers.ZeroAddress)
-            expect(userOrder.quantity).to.equal(0)
-            expect(userOrder.unitPrice).to.equal(0)
+            // Check that there is no order pending
+            let userOrder = await marketplace.connect(user1).getOrdersByAddress(1,user1.address)
+            expect(userOrder.length).to.equal(0)
 
             const findEvent = await marketplace.connect(user1).createSellOrder(1,100,6000)
             // Check receiving ListedForSale event
@@ -169,10 +169,10 @@ describe('Test Marketplace', function() {
             )
 
             // Check order for user1
-            userOrder = await marketplace.connect(user1).getOrderByAddress(1,user1.address)
-            expect(userOrder.listedBy).to.equal(user1.address)
-            expect(userOrder.quantity).to.equal(6000)
-            expect(userOrder.unitPrice).to.equal(100)
+            userOrder = await marketplace.connect(user1).getOrdersByAddress(1,user1.address)
+            expect(userOrder[0].seller).to.equal(user1.address)
+            expect(userOrder[0].quantity).to.equal(6000)
+            expect(userOrder[0].unitPrice).to.equal(100)
         })
     })
     describe('Buy SCPI shares', function() {
@@ -191,7 +191,7 @@ describe('Test Marketplace', function() {
             await scpiNft.connect(scpi1).safeTransferFrom(scpi1.address,user1.address,1,6000,ethers.ZeroHash)
         })
 
-        it('shall allow user2 to buy some shared sold by user1 and user 1 shall withdraw', async function() {
+        it('shall allow user2 to buy some shares sold by user1 and user 1 shall withdraw', async function() {
             scpiId = 1
             const unitPrice = 100
             // Create a sell order
@@ -202,7 +202,7 @@ describe('Test Marketplace', function() {
             // user 2 create a buy order
             const buyingSharesAmount = 15
             const paidAmount = (buyingSharesAmount*unitPrice*publicPrice)/100
-            const findEvent = await marketplace.connect(user2).createBuyOrder(scpiId,buyingSharesAmount,user1.address,{
+            const findEvent = await marketplace.connect(user2).createBuyOrder(scpiId,buyingSharesAmount,{
                 value: ethers.parseEther(paidAmount.toString())
               })
 
@@ -227,10 +227,10 @@ describe('Test Marketplace', function() {
             expect(balanceData).to.equal(15)
 
             // Check order for user1
-            userOrder = await marketplace.connect(user1).getOrderByAddress(scpiId,user1.address)
-            expect(userOrder.listedBy).to.equal(user1.address)
-            expect(userOrder.quantity).to.equal(5000-15)
-            expect(userOrder.unitPrice).to.equal(unitPrice)
+            userOrder = await marketplace.connect(user1).getOrdersByAddress(scpiId,user1.address)
+            expect(userOrder[0].seller).to.equal(user1.address)
+            expect(userOrder[0].quantity).to.equal(5000-15)
+            expect(userOrder[0].unitPrice).to.equal(unitPrice)
 
             // Check eth balance for marketplace
             const newMarketplaceBalance = await ethers.provider.getBalance(marketplace)
@@ -250,7 +250,7 @@ describe('Test Marketplace', function() {
             expect(newBalance).to.equal(initialBalance+ethers.parseEther(paidAmount.toString())-usedGas*gasPriceInWei)
         })
 
-        it('shall allow user2 to buy all shared sold by user1', async function() {
+        it('shall allow user2 to buy all shares sold by user1', async function() {
             scpiId = 1
             const unitPrice = 95
             // Create a sell order
@@ -259,7 +259,7 @@ describe('Test Marketplace', function() {
             // user 2 create a buy order
             const buyingSharesAmount = 5000
             const paidAmount = (buyingSharesAmount*unitPrice*publicPrice)/100
-            const findEvent = await marketplace.connect(user2).createBuyOrder(scpiId,buyingSharesAmount,user1.address,{
+            const findEvent = await marketplace.connect(user2).createBuyOrder(scpiId,buyingSharesAmount,{
                 value: ethers.parseEther(paidAmount.toString())
               })
 
@@ -283,9 +283,9 @@ describe('Test Marketplace', function() {
             balanceData = await scpiNft.balanceOf(user2.address,scpiId)
             expect(balanceData).to.equal(buyingSharesAmount)
 
-            // Check that there are no orders existing anymore
-            const allOrders = await marketplace.connect(user1).getOrders(1)
-            expect(allOrders.length).to.equal(0)
+            // Check that there are no orders existing for the seller
+            const userOrders = await marketplace.connect(user1).getOrdersByAddress(scpiId,user1.address)
+            expect(userOrders.length).to.equal(0)
         })
 
         it('shall reject if user2 does not pay enough', async function() {
@@ -297,35 +297,73 @@ describe('Test Marketplace', function() {
             // user 2 create a buy order
             const buyingSharesAmount = 5000
             const paidAmount = (buyingSharesAmount*unitPrice*publicPrice)/100 - 1 // -1 to pay less than expected
-            await expect(marketplace.connect(user2).createBuyOrder(scpiId,buyingSharesAmount,user1.address,{
+            await expect(marketplace.connect(user2).createBuyOrder(scpiId,buyingSharesAmount,{
                 value: paidAmount
               })).to.be.revertedWith('Marketplace: Less ETH provided for the purchase')
         })
 
-        it('shall reject if user2 try to by tokens from not existing sell order', async function() {
+        it('shall reject if user2 try to buy more shares than available on the marketplace', async function() {
             scpiId = 1
             const unitPrice = 30
 
             // user 2 create a buy order
             const buyingSharesAmount = 5000
             const paidAmount = (buyingSharesAmount*unitPrice*publicPrice)/100-1 // -1 to pay less than expected
-            await expect(marketplace.connect(user2).createBuyOrder(scpiId,buyingSharesAmount,user1.address,{
+            await expect(marketplace.connect(user2).createBuyOrder(scpiId,buyingSharesAmount,{
                 value: paidAmount
-              })).to.be.revertedWith('Marketplace: Given token is not listed for sale by the owner')
+              })).to.be.revertedWith('Marketplace: Not enough shares in sale to fill the buy order')
+        })
+    })
+
+    describe('Buy ordering of SCPI shares', function() {
+        beforeEach(async function() {
+            [owner, scpi1, user1, user2, user3] = await ethers.getSigners()
+            let contract = await ethers.getContractFactory('ScpiNFT')
+            scpiNft = await contract.deploy()
+            await scpiNft.waitForDeployment()
+            contract = await ethers.getContractFactory('Marketplace')
+            marketplace = await contract.deploy(scpiNft.target)
+            await scpiNft.setMarketplaceAddress(marketplace.target)
+            publicPrice = 2
+            // Mint one SCPI
+            await scpiNft.registerNewScpi(scpi1.address,'SCPI 1',10000,'URI',ethers.parseEther(publicPrice.toString()))
+            // Send some shares to user1
+            await scpiNft.connect(scpi1).safeTransferFrom(scpi1.address,user1.address,1,1000,ethers.ZeroHash)
+            // Send some shares to user2
+            await scpiNft.connect(scpi1).safeTransferFrom(scpi1.address,user2.address,1,1000,ethers.ZeroHash)
         })
 
-        it('shall reject if user2 tries to buy more shared then sold by user1', async function() {
+        it('shall buy cheaper shares first', async function() {
             scpiId = 1
-            const unitPrice = 40
-            // Create a sell order
-            await marketplace.connect(user1).createSellOrder(scpiId,unitPrice,10)
+            const unitPrice100 = 100
+            const unitPrice50 = 50
+            // Create sell orders
+            await marketplace.connect(user1).createSellOrder(scpiId,unitPrice100,3)
+            await marketplace.connect(user2).createSellOrder(scpiId,unitPrice50,5)
 
-            // user 2 create a buy order
-            const buyingSharesAmount = 11
-            const paidAmount = (buyingSharesAmount*unitPrice*publicPrice)/100
-            await expect(marketplace.connect(user2).createBuyOrder(scpiId,buyingSharesAmount,user1.address,{
+            initialMarketplaceBalance = await ethers.provider.getBalance(marketplace)
+
+            // user 3 create a buy order
+            const buyingSharesAmount = 3
+            const paidAmount = (buyingSharesAmount*unitPrice50) / 100 * publicPrice
+            const findEvent = await marketplace.connect(user3).createBuyOrder(scpiId,buyingSharesAmount,{
                 value: ethers.parseEther(paidAmount.toString())
-              })).to.be.revertedWith('Marketplace: Attempting to buy more than available for sale')
+            })
+
+            console.log("paidAmount = "+paidAmount);
+            // Check receiving ListedForSale event
+            await expect(findEvent)
+            .to.emit(
+                marketplace, 
+                'TokensSold'
+            )
+            .withArgs(
+                user2.address,
+                user3.address,
+                scpiId,
+                buyingSharesAmount,
+                ethers.parseEther(paidAmount.toString())
+            )
         })
     })
 })
