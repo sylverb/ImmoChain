@@ -43,11 +43,11 @@ const ScpiDetails = () => {
       fetchSalesOrders();
       fetchMyOrders();
     }
-  }, [marketplaceContract])
+  }, [marketplaceContract,userAddress])
 
   useEffect(() => {
     if(scpiNftContract) fetchOwnedShares();
-  }, [marketplaceContract])
+  }, [scpiNftContract],userAddress)
 
   const handleCreateShareSale = async () => {
     setIsLoading(true);
@@ -82,6 +82,9 @@ const ScpiDetails = () => {
   }
 
   const findPrice = (desiredQuantity) => {
+    if (desiredQuantity === undefined)
+      return 0;
+      
     let remainingQuantityToBuy = desiredQuantity;
     let totalPrice = 0;
   
