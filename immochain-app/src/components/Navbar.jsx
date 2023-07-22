@@ -6,6 +6,7 @@ import { useStateContext } from '../context';
 import { CustomButton } from './';
 import { logo, menu, search } from '../assets';
 import { navlinks } from '../constants';
+import { useNetworkMismatch, useNetwork, ChainId } from "@thirdweb-dev/react";
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -13,6 +14,13 @@ const Navbar = () => {
   const [toggleDrawer, setToggleDrawer] = useState(false);
   const { disconnect, connect, address, marketplaceContract, getMarketplaceBalance, withdrawFunds } = useStateContext();
   const [walletBalance, setWalletBalance] = useState(0);
+
+  const isMismatched = useNetworkMismatch();
+  const [, switchNetwork] = useNetwork();
+
+  const chainId = process.env.NODE_ENV === 'production'
+  ? ChainId.Mumbai
+  : ChainId.Hardhat;
 
   const fetchBalance = async () => {
     const balance = await getMarketplaceBalance();
@@ -53,10 +61,15 @@ const Navbar = () => {
         )}
         <CustomButton 
           btnType="button"
-          title={address ? formatWalletAddress(address) : 'Connect'}
+          title={address ? (isMismatched ? 'wrong network' : formatWalletAddress(address)) : 'Connect'}
           styles={address ? 'bg-[#1dc071]' : 'bg-[#8c6dfd]'}
           handleClick={() => {
-            if(address) disconnect()
+            if(address) {
+              if (isMismatched)
+                switchNetwork(chainId)
+              else
+                disconnect()
+            } 
             else connect()
           }}
         />
