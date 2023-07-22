@@ -23,6 +23,7 @@ contract Marketplace {
 
     struct OrderPrice {
         uint256 price;
+        uint256 total;
         uint256 ordersByPriceId;
     }
 
@@ -36,7 +37,7 @@ contract Marketplace {
 
     /*************************************************************/
 
-    // Mapping pour stocker le nombre de NFT mis en vente par chaque utilisateur pour chaque nftId
+    // Mapping to store shares numbers sold by each seller for each nftId
     mapping(address => mapping(uint256 => uint256)) private userSellCounts;
 
     // Mapping to store sellers money to allow them to claim it
@@ -142,7 +143,9 @@ contract Marketplace {
             for (uint256 i = nftOrders.priceIdTable.length - 1; i > indexToInsert; i--) {
                 nftOrders.priceIdTable[i] = nftOrders.priceIdTable[i - 1];
             }
-            nftOrders.priceIdTable[indexToInsert] = OrderPrice(unitPrice, nftOrders.currentPriceId++);
+            nftOrders.priceIdTable[indexToInsert] = OrderPrice(unitPrice, noOfTokensForSale, nftOrders.currentPriceId++);
+        } else {
+            nftOrders.priceIdTable[indexToInsert].total += noOfTokensForSale;
         }
 
         SellOrder memory order = SellOrder(msg.sender, noOfTokensForSale, unitPrice);
@@ -224,14 +227,16 @@ contract Marketplace {
 
         // We will parse all the sale orders until we filled the noOfTokensToBuy
         for (uint256 priceRangeIndex = 0; priceRangeIndex < nftOrders.priceIdTable.length; priceRangeIndex++) { // Parse sales orders from cheaper to most expensive
-            SellOrder[] storage ordersList = nftOrders.ordersList[nftOrders.priceIdTable[priceRangeIndex].price];
+            OrderPrice storage priceTable = nftOrders.priceIdTable[priceRangeIndex];
+            SellOrder[] storage ordersList = nftOrders.ordersList[priceTable.price];
             // Parse all sales in the price range
             for (uint256 orderIndex = 0; orderIndex < ordersList.length; orderIndex++) {
                 SellOrder storage order = ordersList[orderIndex];
                 if (order.quantity > remainingQuantity) { // This will fill the request
                     uint256 buyPrice = (order.unitPrice * publicPrice) / 100 * remainingQuantity;
-                    // Reduce total amount of sold tokens for user
+                    // Reduce total amount of sold tokens for user and price table
                     userSellCounts[order.seller][nftId] -= remainingQuantity;
+                    priceTable.total -= remainingQuantity;
 
                     // Assign the specified value of Ether to the token owner
                     require (availablePayment >= buyPrice,"Marketplace: Less ETH provided for the purchase");
@@ -266,8 +271,9 @@ contract Marketplace {
                     uint256 buyPrice = (order.unitPrice * publicPrice) / 100 * order.quantity;
                     remainingQuantity -= order.quantity;
 
-                    // Reduce total amount of sold tokens for user
+                    // Reduce total amount of sold tokens for user and price table
                     userSellCounts[order.seller][nftId] -= order.quantity;
+                    priceTable.total -= order.quantity;
 
                     // Assign the specified value of Ether to the token owner
                     require (availablePayment >= buyPrice,"Marketplace: Less ETH provided for the purchase");
@@ -349,14 +355,14 @@ contract Marketplace {
      * @param nftId unique identifier of the token
      * @return An array of sell orders for the given token
      */
-/*    function getOrders(uint256 nftId)
+    function getOrderCountByPrice(uint256 nftId)
         external
         view
-        returns (SellOrder[] memory)
+        returns (OrderPrice[] memory)
     {
-        bytes32 orderId = _getOrdersMapId(nftId);
-        return orders[orderId].allOrders();
-    }*/
+        OrdersSet storage nftOrders = orders[nftId];
+        return nftOrders.priceIdTable;
+    }
 
 
 //    /**
