@@ -55,6 +55,8 @@ const ScpiDetails = () => {
     await createSaleOrder(state.pId, sellPrice, sharesAmount); 
 
     setIsLoading(false);
+
+    refreshDynamicInfo();
   }
 
   const handleCancelShareSale = async () => {
@@ -63,6 +65,8 @@ const ScpiDetails = () => {
     await cancelSaleOrders(state.pId); 
 
     setIsLoading(false);
+
+    refreshDynamicInfo();
   }
 
   const handleBuyShareSale = async () => {
@@ -71,6 +75,8 @@ const ScpiDetails = () => {
     await createBuyOrder(state.pId,buySharesAmount,findPrice(buySharesAmount));
 
     setIsLoading(false);
+
+    refreshDynamicInfo();
   }
   
   const handleSendShares = async () => {
@@ -79,12 +85,21 @@ const ScpiDetails = () => {
     await transferScpiShares(state.pId,sharesAmount,userAddress,scpiDestAddress)
 
     setIsLoading(false);
+
+    fetchOwnedShares();
+
+  }
+
+  const refreshDynamicInfo = async () => {
+    fetchSalesOrders();
+    fetchMyOrders();
+    fetchOwnedShares();
   }
 
   const findPrice = (desiredQuantity) => {
     if (desiredQuantity === undefined)
       return 0;
-      
+
     let remainingQuantityToBuy = desiredQuantity;
     let totalPrice = 0;
   
