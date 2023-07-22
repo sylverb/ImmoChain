@@ -7,12 +7,12 @@ const Profile = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [scpiList, setScpiList] = useState([]);
 
-  const { address, scpiNftContract, getUserCampaigns } = useStateContext();
+  const { address, scpiNftContract } = useStateContext();
 
   const fetchScpi = async () => {
     setIsLoading(true);
-    const data = await getUserCampaigns();
-    setScpiList(data);
+//    const data = await getUserCampaigns();
+//    setScpiList(data);
     setIsLoading(false);
   }
 

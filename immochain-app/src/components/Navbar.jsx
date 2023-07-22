@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom';
 import { formatWalletAddress } from '../utils/index';
 
@@ -11,7 +11,26 @@ const Navbar = () => {
   const navigate = useNavigate();
   const [isActive, setIsActive] = useState('dashboard');
   const [toggleDrawer, setToggleDrawer] = useState(false);
-  const { disconnect, connect, address } = useStateContext();
+  const { disconnect, connect, address, marketplaceContract, getMarketplaceBalance, withdrawFunds } = useStateContext();
+  const [walletBalance, setWalletBalance] = useState(0);
+
+  const fetchBalance = async () => {
+    const balance = await getMarketplaceBalance();
+    console.log("balance = "+balance);
+
+    setWalletBalance(balance);
+  }
+
+  const withdraw = async () => {
+    await withdrawFunds();
+  }
+
+
+  useEffect(() => {
+    if(marketplaceContract) {
+      fetchBalance();
+    }
+  }, [marketplaceContract,address])
 
   return (
     <div className="flex md:flex-row flex-col-reverse justify-between mb-[35px] gap-6">
@@ -24,6 +43,14 @@ const Navbar = () => {
       </div>
 
       <div className="sm:flex hidden flex-row justify-end gap-4">
+        {address && (
+          <CustomButton
+            btnType="button"
+            title="Withdraw"
+            styles='bg-[#8c6dfd]'
+            handleClick={withdraw}
+          />
+        )}
         <CustomButton 
           btnType="button"
           title={address ? formatWalletAddress(address) : 'Connect'}

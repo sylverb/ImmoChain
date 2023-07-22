@@ -403,7 +403,7 @@ contract Marketplace {
         payable(msg.sender).transfer(amount);
     }
 
-    function getFundsInfo() external view returns (uint256) {
+    function getBalanceInfo() external view returns (uint256) {
         return sellersWallets[msg.sender];
     }
 

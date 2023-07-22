@@ -172,28 +172,26 @@ export const StateContextProvider = ({ children }) => {
     }
   }
 
-  const getUserCampaigns = async () => {
-    const allCampaigns = await getScpiInfos();
+  const getMarketplaceBalance = async () => {
+    try {
+      let funds = await marketplaceContract.call('getBalanceInfo');
 
-    const filteredCampaigns = allCampaigns.filter((campaign) => campaign.owner === address);
-
-    return filteredCampaigns;
+      console.log("getMarketplaceBalance call success funds = "+funds)
+      return funds;
+    } catch (error) {
+      console.log("getMarketplaceBalance call failure", error)
+      return -1;
+    }
   }
 
-  const getDonations = async (pId) => {
-    const donations = await scpiNftContract.call('getDonators', [pId]);
-    const numberOfDonations = donations[0].length;
+  const withdrawFunds = async (id) => {
+    try {
+     await marketplaceContract.call('withdrawFunds');
 
-    const parsedDonations = [];
-
-    for(let i = 0; i < numberOfDonations; i++) {
-      parsedDonations.push({
-        donator: donations[0][i],
-        donation: ethers.BigNumber.from(ethers.utils.formatEther(donations[1][i].toString()))
-      })
+      console.log("withdrawFunds call success")
+    } catch (error) {
+      console.log("withdrawFunds call failure", error)
     }
-
-    return parsedDonations;
   }
 
   return (
@@ -213,8 +211,8 @@ export const StateContextProvider = ({ children }) => {
         getOrdersByAddress,
         getOrderCountByPrice,
         cancelSaleOrders,
-        getUserCampaigns,
-        getDonations
+        getMarketplaceBalance,
+        withdrawFunds
       }}
     >
       {children}

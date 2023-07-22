@@ -237,7 +237,7 @@ describe('Test Marketplace', function() {
             expect(newMarketplaceBalance).to.equal(initialMarketplaceBalance+ethers.parseEther(paidAmount.toString()))
 
             // Check user balance on marketplace
-            let marketBalance = await marketplace.connect(user1).getFundsInfo()
+            let marketBalance = await marketplace.connect(user1).getBalanceInfo()
             expect(marketBalance).to.equal(initialMarketplaceBalance+ethers.parseEther(paidAmount.toString()))
 
             // Allow user1 to withdraw his funds

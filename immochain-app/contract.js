@@ -686,7 +686,7 @@ export const marketplaceContractAbi = [
   },
   {
     "inputs": [],
-    "name": "getFundsInfo",
+    "name": "getBalanceInfo",
     "outputs": [
       {
         "internalType": "uint256",
