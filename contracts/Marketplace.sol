@@ -197,8 +197,19 @@ contract Marketplace {
             }
         }
 
-        // Update total sale count for user
+        // Update total sale count for user and price table
         userSellCounts[msg.sender][nftId] -= order.quantity;
+
+        // Find the appropriate index to update the new quantity
+        uint256 indexToUpdate = 0;
+        while (indexToUpdate < nftOrders.priceIdTable.length && nftOrders.priceIdTable[indexToUpdate].price < order.unitPrice) {
+            indexToUpdate++;
+        }
+
+        if (indexToUpdate < nftOrders.priceIdTable.length) {
+            OrderPrice storage priceTable = nftOrders.priceIdTable[indexToUpdate];
+            priceTable.total -= order.quantity;
+        }
 
         // Emit an event indicating that the sell order has been unlisted.
         emit UnlistedFromSale(msg.sender, nftId);
@@ -365,8 +376,8 @@ contract Marketplace {
     }
 
 
-//    /**
-/*     * getOrderByAddress: Get the SellOrder of a token for a given owner
+    /**
+     * getOrderByAddress: Get the SellOrder of a token for a given owner
      * @param nftId unique identifier of the token
      * @param seller address of the owner
      * @return Sell order of a token for the given owner
