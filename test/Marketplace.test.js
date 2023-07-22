@@ -350,7 +350,6 @@ describe('Test Marketplace', function() {
                 value: ethers.parseEther(paidAmount.toString())
             })
 
-            console.log("paidAmount = "+paidAmount);
             // Check receiving ListedForSale event
             await expect(findEvent)
             .to.emit(
@@ -363,6 +362,141 @@ describe('Test Marketplace', function() {
                 scpiId,
                 buyingSharesAmount,
                 ethers.parseEther(paidAmount.toString())
+            )
+        })
+
+        it('shall buy from different prices to fill request', async function() {
+            scpiId = 1
+            const unitPrice100 = 100
+            const unitPrice50 = 50
+            // Create sell orders
+            await marketplace.connect(user1).createSellOrder(scpiId,unitPrice100,3)
+            await marketplace.connect(user2).createSellOrder(scpiId,unitPrice50,5)
+
+            initialMarketplaceBalance = await ethers.provider.getBalance(marketplace)
+
+            // user 3 create a buy order
+            const buyingSharesAmount = 8
+            const paidAmount = (5*unitPrice50) / 100 * publicPrice + (3*unitPrice100) / 100 * publicPrice
+            const findEvent = await marketplace.connect(user3).createBuyOrder(scpiId,buyingSharesAmount,{
+                value: ethers.parseEther(paidAmount.toString())
+            })
+
+            // Check receiving ListedForSale event
+            await expect(findEvent)
+            .to.emit(
+                marketplace, 
+                'TokensSold'
+            )
+            .withArgs(
+                user2.address,
+                user3.address,
+                scpiId,
+                5,
+                ethers.parseEther(((5*unitPrice50) / 100 * publicPrice).toString())
+            )
+
+            await expect(findEvent)
+            .to.emit(
+                marketplace, 
+                'TokensSold'
+            )
+            .withArgs(
+                user1.address,
+                user3.address,
+                scpiId,
+                3,
+                ethers.parseEther(((3*unitPrice100) / 100 * publicPrice).toString())
+            )
+        })
+
+        it('The number of shares for sale on the marketplace shall be 0 once we bought them all', async function() {
+            scpiId = 1
+            const unitPrice100 = 100
+            const unitPrice50 = 50
+            // Create sell orders
+            await marketplace.connect(user1).createSellOrder(scpiId,unitPrice100,3)
+            await marketplace.connect(user2).createSellOrder(scpiId,unitPrice50,5)
+
+            initialMarketplaceBalance = await ethers.provider.getBalance(marketplace)
+
+            // user 3 create a buy order
+            const buyingSharesAmount = 8
+            const paidAmount = (5*unitPrice50) / 100 * publicPrice + (3*unitPrice100) / 100 * publicPrice
+            const findEvent = await marketplace.connect(user3).createBuyOrder(scpiId,buyingSharesAmount,{
+                value: ethers.parseEther(paidAmount.toString())
+            })
+
+            await expect(marketplace.connect(user3).createBuyOrder(scpiId,1,{
+                value: ethers.parseEther(paidAmount.toString())
+              })).to.be.revertedWith('Marketplace: Not enough shares in sale to fill the buy order')
+        })
+    })
+
+    describe('Large sales numbers', function() {
+        beforeEach(async function() {
+            [owner, scpi1, user1, user2, user3] = await ethers.getSigners()
+            let contract = await ethers.getContractFactory('ScpiNFT')
+            scpiNft = await contract.deploy()
+            await scpiNft.waitForDeployment()
+            contract = await ethers.getContractFactory('Marketplace')
+            marketplace = await contract.deploy(scpiNft.target)
+            await scpiNft.setMarketplaceAddress(marketplace.target)
+            publicPrice = 0.01
+            // Mint one SCPI
+            await scpiNft.registerNewScpi(scpi1.address,'SCPI 1',10000,'URI',ethers.parseEther(publicPrice.toString()))
+            // Send some shares to user1
+            await scpiNft.connect(scpi1).safeTransferFrom(scpi1.address,user1.address,1,5000,ethers.ZeroHash)
+            // Send some shares to user2
+            await scpiNft.connect(scpi1).safeTransferFrom(scpi1.address,user2.address,1,5000,ethers.ZeroHash)
+        })
+
+        it('shall be able to buy with a lot of sell orders present', async function() {
+            scpiId = 1
+            const unitPrice100 = 100
+            const unitPrice50 = 50
+            for (i = 0; i < 5; i++) {
+//                console.log("i = "+i)
+                // Create sell orders
+                await marketplace.connect(user1).createSellOrder(scpiId,unitPrice100,1)
+                await marketplace.connect(user2).createSellOrder(scpiId,unitPrice50,1)
+                await marketplace.connect(user1).createSellOrder(scpiId,unitPrice50,1)
+                await marketplace.connect(user2).createSellOrder(scpiId,unitPrice100,1)
+            }
+            initialMarketplaceBalance = await ethers.provider.getBalance(marketplace)
+
+            // user 3 create a buy order
+            const buyingSharesAmount = 2
+            const paidAmount = (buyingSharesAmount*unitPrice50) / 100 * publicPrice
+            const tx = await marketplace.connect(user3).createBuyOrder(scpiId,buyingSharesAmount,{
+                value: ethers.parseEther(paidAmount.toString())
+            })
+
+            // Check receiving ListedForSale event
+            await expect(tx)
+            .to.emit(
+                marketplace, 
+                'TokensSold'
+            )
+            .withArgs(
+                user2.address,
+                user3.address,
+                scpiId,
+                1,
+                ethers.parseEther(((unitPrice50) / 100 * publicPrice).toString())
+            )
+
+            await expect(tx)
+            .to.emit(
+                marketplace, 
+                'TokensSold'
+            )
+            .withArgs(
+                user1.address,
+                user3.address,
+                scpiId,
+                1,
+                ethers.parseEther(((unitPrice50) / 100 * publicPrice).toString())
             )
         })
     })

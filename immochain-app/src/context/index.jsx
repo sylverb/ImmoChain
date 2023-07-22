@@ -99,24 +99,63 @@ export const StateContextProvider = ({ children }) => {
     }
   }
 
-  const getSalesOrders = async (id) => {
+  const createBuyOrder = async (id,quantity,price) => {
+    try {
+     console.log("creatBuyOrder : "+ethers.utils.parseEther(price.toString()))
+     await marketplaceContract.call('createBuyOrder',
+          id, // id of the SCPI
+          quantity, // number of shares to buy
+          { value: ethers.utils.parseEther(price.toString()) }
+      );
+
+      console.log("createSellOrder call success")
+    } catch (error) {
+      console.log("createSellOrder call failure", error)
+    }
+  }
+
+  const getOrderCountByPrice = async (id) => {
     const parsedSalesOrders = [];
     try {
-      const datas = await marketplaceContract.call('getOrders',
+      const datas = await marketplaceContract.call('getOrderCountByPrice',
           id, // id of the SCPI
       );
 
-      const numberOfSaleOrders = datas.length;
+      const numberOfPriceSets = datas.length;
 
-      for(let i = 0; i < numberOfSaleOrders; i++) {
-          parsedSalesOrders.push({
-            listedBy: datas[i].listedBy,
-            quantity: datas[i].quantity.toNumber(),
-            unitPrice: datas[i].unitPrice.toNumber()
+      for(let i = 0; i < numberOfPriceSets; i++) {
+        if (datas[i].total.toNumber() > 0) {
+            parsedSalesOrders.push({
+              quantity: datas[i].total.toNumber(),
+              unitPrice: datas[i].price.toNumber()
+            })
+        }
+      }
+    } catch (error) {
+      console.log("getOrderCountByPrice call failure", error)
+    }
+    return parsedSalesOrders;
+  }
+
+  const getOrdersByAddress = async (id,address) => {
+    const parsedSalesOrders = [];
+    try {
+      const datas = await marketplaceContract.call('getOrdersByAddress',
+          id, // id of the SCPI
+          address
+      );
+
+      console.log("getOrdersByAddress datas = "+datas);
+      const numberOfPriceSets = datas.length;
+
+      for(let i = 0; i < numberOfPriceSets; i++) {
+        parsedSalesOrders.push({
+          quantity: datas[i].quantity.toNumber(),
+          unitPrice: datas[i].unitPrice.toNumber()
         })
       }
     } catch (error) {
-      console.log("getSalesOrders call failure", error)
+      console.log("getOrderCountByPrice call failure", error)
     }
     return parsedSalesOrders;
   }
@@ -150,7 +189,7 @@ export const StateContextProvider = ({ children }) => {
     for(let i = 0; i < numberOfDonations; i++) {
       parsedDonations.push({
         donator: donations[0][i],
-        donation: ethers.utils.formatEther(donations[1][i].toString())
+        donation: ethers.BigNumber.from(ethers.utils.formatEther(donations[1][i].toString()))
       })
     }
 
@@ -170,7 +209,9 @@ export const StateContextProvider = ({ children }) => {
         getSharesBalance,
         getScpiInfos,
         createSaleOrder,
-        getSalesOrders,
+        createBuyOrder,
+        getOrdersByAddress,
+        getOrderCountByPrice,
         cancelSaleOrders,
         getUserCampaigns,
         getDonations

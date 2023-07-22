@@ -654,11 +654,6 @@ export const marketplaceContractAbi = [
         "internalType": "uint256",
         "name": "noOfTokensToBuy",
         "type": "uint256"
-      },
-      {
-        "internalType": "address payable",
-        "name": "tokenOwner",
-        "type": "address"
       }
     ],
     "name": "createBuyOrder",
@@ -708,36 +703,31 @@ export const marketplaceContractAbi = [
         "internalType": "uint256",
         "name": "nftId",
         "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "listedBy",
-        "type": "address"
       }
     ],
-    "name": "getOrderByAddress",
+    "name": "getOrderCountByPrice",
     "outputs": [
       {
         "components": [
           {
-            "internalType": "address",
-            "name": "listedBy",
-            "type": "address"
-          },
-          {
             "internalType": "uint256",
-            "name": "quantity",
+            "name": "price",
             "type": "uint256"
           },
           {
             "internalType": "uint256",
-            "name": "unitPrice",
+            "name": "total",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "ordersByPriceId",
             "type": "uint256"
           }
         ],
-        "internalType": "struct SellOrderSetLib.SellOrder",
+        "internalType": "struct Marketplace.OrderPrice[]",
         "name": "",
-        "type": "tuple"
+        "type": "tuple[]"
       }
     ],
     "stateMutability": "view",
@@ -749,15 +739,20 @@ export const marketplaceContractAbi = [
         "internalType": "uint256",
         "name": "nftId",
         "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "seller",
+        "type": "address"
       }
     ],
-    "name": "getOrders",
+    "name": "getOrdersByAddress",
     "outputs": [
       {
         "components": [
           {
             "internalType": "address",
-            "name": "listedBy",
+            "name": "seller",
             "type": "address"
           },
           {
@@ -771,7 +766,7 @@ export const marketplaceContractAbi = [
             "type": "uint256"
           }
         ],
-        "internalType": "struct SellOrderSetLib.SellOrder[]",
+        "internalType": "struct Marketplace.SellOrder[]",
         "name": "",
         "type": "tuple[]"
       }

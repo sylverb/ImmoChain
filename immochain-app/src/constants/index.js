@@ -2,12 +2,12 @@ import { registerScpi, dashboard, logout, payment, profile, withdraw } from '../
 
 export const navlinks = [
   {
-    name: 'dashboard',
+    name: 'Dashboard',
     imgUrl: dashboard,
     link: '/',
   },
   {
-    name: 'campaign',
+    name: 'Register',
     imgUrl: registerScpi,
     link: '/register-scpi',
   },

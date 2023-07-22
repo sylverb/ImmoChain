@@ -1,22 +1,19 @@
 import React, { useState, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ethers } from 'ethers';
 
 import { useStateContext } from '../context';
 import { CountBox, CustomButton, FormField, Loader } from '../components';
-import { calculateBarPercentage } from '../utils';
 import { useAddress } from '@thirdweb-dev/react';
 
 const ScpiDetails = () => {
   const { state } = useLocation();
-  const { getSalesOrders, createSaleOrder, cancelSaleOrders, scpiNftContract, marketplaceContract, getSharesBalance, address, transferScpiShares } = useStateContext();
+  const { getOrderCountByPrice, getOrdersByAddress, createSaleOrder, cancelSaleOrders, createBuyOrder, scpiNftContract, marketplaceContract, getSharesBalance, address, transferScpiShares } = useStateContext();
 
   const [isLoading, setIsLoading] = useState(false);
   const [sharesAmount, setSharesAmount] = useState();
   const [buySharesAmount, setBuySharesAmount] = useState();
   const [sellPrice, setSellPrice] = useState(100);
   const [salesOrders, setSalesOrders] = useState([]);
-  const [rawSalesOrders, setRawSalesOrders] = useState([]);
   const [scpiDestAddress, setScpiDestAddress] = useState([]);
   const [myOrders, setMyOrders] = useState([]);
   const [balance, setBalance] = useState();
@@ -24,41 +21,17 @@ const ScpiDetails = () => {
   const userAddress = useAddress(); // get connected wallet address
 
   const fetchSalesOrders = async () => {
-    const orders = await getSalesOrders(state.pId);
+    const orders = await getOrderCountByPrice(state.pId);
     console.log("orders = "+JSON.stringify(orders));
 
-    setMyOrders(await mySalesOrders(orders));
-    setRawSalesOrders(orders);
-
-    // Trie les commandes par unitPrice en ordre croissant
-    orders.sort((a, b) => a.unitPrice - b.unitPrice);
-
-    const groupedSalesOrders = orders.reduce((result, currentValue) => {
-      let groupKey = currentValue['unitPrice'];
-      if (!result[groupKey]) {
-        result[groupKey] = [];
-      }
-      result[groupKey].push(currentValue);
-      return result;
-    }, {});
-
-    setSalesOrders(groupedSalesOrders);
+    setSalesOrders(orders);
   }
 
-  const mySalesOrders = async (salesArray) => {
-    const filteredOrders = salesArray.filter((order) => order.listedBy === userAddress);
-
-    return filteredOrders;
+  const fetchMyOrders = async () => {
+    const orders = await getOrdersByAddress(state.pId,userAddress);
+    console.log("myOrders = "+JSON.stringify(orders));
+    setMyOrders(orders);
   }
-
-  const calculateTotalQuantity = (orders, unitPrice) => {
-    const filteredOrders = orders[unitPrice] || [];
-    if (filteredOrders.length === 0) {
-      return 0;
-    }
-    const totalQuantity = filteredOrders.reduce((sum, order) => sum + order.quantity, 0);
-    return totalQuantity;
-  };
 
   const fetchOwnedShares = async () => {
     const result = await getSharesBalance(userAddress, state.pId);
@@ -66,7 +39,10 @@ const ScpiDetails = () => {
   }
 
   useEffect(() => {
-    if(marketplaceContract) fetchSalesOrders();
+    if(marketplaceContract) {
+      fetchSalesOrders();
+      fetchMyOrders();
+    }
   }, [marketplaceContract])
 
   useEffect(() => {
@@ -88,8 +64,11 @@ const ScpiDetails = () => {
 
     setIsLoading(false);
   }
+
   const handleBuyShareSale = async () => {
     setIsLoading(true);
+
+    await createBuyOrder(state.pId,buySharesAmount,findPrice(buySharesAmount));
 
     setIsLoading(false);
   }
@@ -102,6 +81,47 @@ const ScpiDetails = () => {
     setIsLoading(false);
   }
 
+  const findPrice = (desiredQuantity) => {
+    let remainingQuantityToBuy = desiredQuantity;
+    let totalPrice = 0;
+  
+    // Parcourez les salesOrders jusqu'à ce que vous atteigniez le nombre total de parts souhaitées
+    for (const order of salesOrders) {
+      if (order.quantity <= remainingQuantityToBuy) {
+        // Si la quantité disponible dans cette entrée est inférieure la quantité restante à acheter,
+        // ajoutez le montant total au prix en cours
+        totalPrice += (order.unitPrice * state.publicPrice) * order.quantity;
+        remainingQuantityToBuy -= order.quantity;
+      } else {
+        // Sinon, calculez le prix partiel pour acheter uniquement la quantité restante
+        totalPrice += (order.unitPrice * state.publicPrice) * remainingQuantityToBuy;
+        remainingQuantityToBuy = 0;
+        break;
+      }
+    }
+  
+    // Si vous n'avez pas atteint la quantité souhaitée et il n'y a plus de parts disponibles, 
+    // le prix minimum ne peut pas être calculé pour la quantité souhaitée
+    if (remainingQuantityToBuy > 0) {
+      return null;
+    }
+
+    // Sinon, retournez le prix minimum pour le nombre de parts souhaitées
+    return totalPrice/100;
+  }
+
+  const dynamicTitlePart = () => {
+    const price = findPrice(buySharesAmount);
+
+    if (price !== null && price !== 0) {
+      return `Acheter des parts (${price} ETH)`;
+    } else if (price === 0) {
+      return 'Choisir le nombre de parts';
+    } else {
+      return "Il n'y a pas assez de parts disponibles";
+    }
+  };
+  
   return (
     <div>
       {isLoading && <Loader />}
@@ -172,10 +192,14 @@ const ScpiDetails = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {Object.entries(salesOrders).map(([unitPrice, orders]) => (
-                      <tr>
-                        <td className="font-epilogue font-normal text-[16px] text-[#b2b3bd] text-center">{(unitPrice*state.publicPrice/100)} ETH</td>
-                        <td className="font-epilogue font-normal text-[16px] text-[#b2b3bd] text-center">{calculateTotalQuantity(salesOrders,unitPrice)}</td>
+                    {salesOrders.map((order, index) => (
+                      <tr key={index}>
+                        <td className="font-epilogue font-normal text-[16px] text-[#b2b3bd] text-center">
+                          {(order.unitPrice * state.publicPrice / 100)} ETH
+                        </td>
+                        <td className="font-epilogue font-normal text-[16px] text-[#b2b3bd] text-center">
+                          {order.quantity}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -194,7 +218,7 @@ const ScpiDetails = () => {
 
                 <CustomButton 
                   btnType="button"
-                  title="Acheter des parts"
+                  title={`${dynamicTitlePart()}`}
                   styles="w-full bg-[#8c6dfd]"
                   handleClick={handleBuyShareSale}
                 />
@@ -209,42 +233,44 @@ const ScpiDetails = () => {
 
             <div className="mt-[20px] flex flex-col p-4 bg-[#1c1c24] rounded-[10px]">
                 <div className="mt-[20px] flex flex-col gap-4">
-                <table className="table-auto">
-                  <thead>
-                    <tr>
-                      <th className="font-epilogue font-normal text-[16px] text-[#b2b3bd]">Prix</th>
-                      <th className="font-epilogue font-normal text-[16px] text-[#b2b3bd]">Quantité</th>
-                      <th className="font-epilogue font-normal text-[16px] text-[#b2b3bd]"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {Object.values(myOrders).map((order) => (
-                    <tr>
-                      <td className="font-epilogue font-normal text-[16px] text-[#b2b3bd] text-center">
-                        {(order.unitPrice * state.publicPrice / 100)} ETH
-                      </td>
-                      <td className="font-epilogue font-normal text-[16px] text-[#b2b3bd] text-center">
-                        {order.quantity}
-                      </td>
-                      <td className="text-center">
-                        <CustomButton 
-                          btnType="button"
-                          title="Annuler"
-                          styles="w-100px bg-[#8c6dfd]"
-                          handleClick={() => handleCancelShareSale()}
-                        />
-                      </td>
-                    </tr>
-                    ))}
-                  </tbody>
-                </table>
+                  <table className="table-auto">
+                    <thead>
+                      <tr>
+                        <th className="font-epilogue font-normal text-[16px] text-[#b2b3bd]">Prix</th>
+                        <th className="font-epilogue font-normal text-[16px] text-[#b2b3bd]">Quantité</th>
+                        <th className="font-epilogue font-normal text-[16px] text-[#b2b3bd]"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Object.values(myOrders).map((order, index) => (
+                      <tr key={index}>
+                        <td className="font-epilogue font-normal text-[16px] text-[#b2b3bd] text-center">
+                          {(order.unitPrice * state.publicPrice / 100)} ETH
+                        </td>
+                        <td className="font-epilogue font-normal text-[16px] text-[#b2b3bd] text-center">
+                          {order.quantity}
+                        </td>
+                        <td className="text-center">
+                        {index === Object.values(myOrders).length - 1 && (
+                          <CustomButton 
+                            btnType="button"
+                            title="Annuler"
+                            styles="w-100px bg-[#8c6dfd]"
+                            handleClick={() => handleCancelShareSale()}
+                          />
+                        )}
+                        </td>
+                      </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
+            ) : null}
           </div>
-          ) : null}
         </div>
-      </div>
-     )}
+      )}
       {userAddress === state.scpiAddress && (
       <div className="mt-[60px] flex lg:flex-row flex-col gap-5">
       <div className="flex-1">
@@ -252,7 +278,7 @@ const ScpiDetails = () => {
 
           <div className="mt-[20px] flex flex-col p-4 bg-[#1c1c24] rounded-[10px]">
             <p className="font-epilogue fount-medium text-[20px] leading-[30px] text-center text-[#808191]">
-              Envoi de parts vers un investisseur
+              Envoi de parts à un investisseur
             </p>
             <div className="mt-[30px]">
               <FormField 
