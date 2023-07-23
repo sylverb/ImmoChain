@@ -5,6 +5,9 @@ import { ethers } from 'ethers';
 import { scpiNftContractAddress, scpiNftContractAbi } from '../../contract';
 import { marketplaceContractAddress, marketplaceContractAbi } from '../../contract';
 
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 const StateContext = createContext();
 
 export const StateContextProvider = ({ children }) => {
@@ -19,6 +22,10 @@ export const StateContextProvider = ({ children }) => {
   /* SCPI NFT actions                           */
   /*************************************************/
 
+  function getTextFromError(error) {
+    return error.reason
+  }
+
   const createScpi = async (form) => {
     try {
       console.log("createScpi = "+form.name);
@@ -31,7 +38,8 @@ export const StateContextProvider = ({ children }) => {
 
       console.log("contract call success", data)
     } catch (error) {
-      console.log("contract call failure", error)
+      toast.error(`Une erreur s\'est produite = ${getTextFromError(error)}`);
+      console.log("createScpi call failure", JSON.stringify(error))
     }
   }
 
@@ -60,6 +68,7 @@ export const StateContextProvider = ({ children }) => {
       console.log("getSharesBalance  ="+balance)
       return balance.toNumber()
     } catch (error) {
+      toast.error(`Une erreur s\'est produite = ${getTextFromError(error)}`);
       console.log("getSharesBalance call failure", error)
       return 0
     }
@@ -77,6 +86,7 @@ export const StateContextProvider = ({ children }) => {
 
       console.log("contract call success", data)
     } catch (error) {
+      toast.error(`Une erreur s\'est produite = ${getTextFromError(error)}`);
       console.log("contract call failure", error)
     }
   }
@@ -95,6 +105,7 @@ export const StateContextProvider = ({ children }) => {
 
       console.log("createSellOrder call success")
     } catch (error) {
+      toast.error(`Une erreur s\'est produite = ${getTextFromError(error)}`);
       console.log("createSellOrder call failure", error)
     }
   }
@@ -110,6 +121,7 @@ export const StateContextProvider = ({ children }) => {
 
       console.log("createSellOrder call success")
     } catch (error) {
+      toast.error(`Une erreur s\'est produite = ${getTextFromError(error)}`);
       console.log("createSellOrder call failure", error)
     }
   }
@@ -168,6 +180,7 @@ export const StateContextProvider = ({ children }) => {
 
       console.log("cancelSellOrder call success")
     } catch (error) {
+      toast.error(`Une erreur s\'est produite = ${getTextFromError(error)}`);
       console.log("cancelSellOrder call failure", error)
     }
   }
@@ -190,7 +203,8 @@ export const StateContextProvider = ({ children }) => {
 
       console.log("withdrawFunds call success")
     } catch (error) {
-      console.log("withdrawFunds call failure", error)
+      toast.error(`Une erreur s\'est produite = ${getTextFromError(error)}`);
+      console.log("withdrawFunds call failure", JSON.stringify(error))
     }
   }
 
