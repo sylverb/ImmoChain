@@ -41,12 +41,16 @@ async function main() {
   await transaction.wait()
 
 
-  console.log('user1 wants to sell all his shares from SCPI1')
-  transaction = await marketplace.connect(user1).createSellOrder(scpi1Id,100,15)
+  console.log('user1 wants to sell 2 shares from SCPI1')
+  transaction = await marketplace.connect(user1).createSellOrder(scpi1Id,100,2)
   await transaction.wait()
 
   console.log('user3 wants to sell 10 shares from SCPI1 50% off')
-  transaction = await marketplace.connect(user3).createSellOrder(scpi1Id,50,10)
+  transaction = await marketplace.connect(user3).createSellOrder(scpi1Id,50,4)
+  await transaction.wait()
+
+  console.log('user2 wants to sell 3 shares from SCPI1 for 75% of its price')
+  transaction = await marketplace.connect(user2).createSellOrder(scpi1Id,75,3)
   await transaction.wait()
 
   console.log('user2 wants to sell 100 shares from SCPI2 for 90% of its price')
