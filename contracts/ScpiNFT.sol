@@ -155,8 +155,8 @@ contract ScpiNFT is ERC1155, Ownable {
         uint _tokenId,
         uint _publicPrice
     ) public {
-        require (msg.sender == _scpiInfos[_tokenId].scpiAddress,"Only SCPI owner is allowed to update share price");
         require (_tokenId <= _tokenIds.current(),"SCPI is not existing");
+        require (msg.sender == _scpiInfos[_tokenId].scpiAddress,"Only SCPI owner is allowed to update share price");
         require (_publicPrice > 0, "Public price shall be greater than 0");
         _scpiInfos[_tokenId].publicPrice  = _publicPrice;
         emit SetNewSharePrice(_tokenId,_publicPrice);

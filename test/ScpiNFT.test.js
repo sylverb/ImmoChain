@@ -109,6 +109,25 @@ describe('Test ScpiNFT', function() {
         })
     })
 
+    describe('Get public price of SCPI shares', function() {
+        beforeEach(async function() {
+            [owner, scpi1, marketplace, addr1, addr2] = await ethers.getSigners()
+            let contract = await ethers.getContractFactory('ScpiNFT')
+            scpiNft = await contract.deploy()
+
+            await scpiNft.registerNewScpi(scpi1.address,'SCPI 1',10000,'URI',99)
+        })
+
+        it('shall get price of an existing SCPI', async function() {
+            var price = await scpiNft.getPublicSharePrice(1)
+            expect(price).to.equal(99)
+        })
+
+        it('shall revert on getting price of an unknown SCPI', async function() {
+            await expect(scpiNft.getPublicSharePrice(2)).to.be.revertedWith('SCPI is not existing')
+        })
+    })
+
     describe('Update share price', function() {
         beforeEach(async function() {
             [owner, scpi1, scpi2, user1] = await ethers.getSigners()
@@ -137,6 +156,15 @@ describe('Test ScpiNFT', function() {
             await expect(scpiNft.connect(scpi1).setPublicSharePrice(2,1000)).to.be.revertedWith('Only SCPI owner is allowed to update share price')
             await expect(scpiNft.connect(user1).setPublicSharePrice(1,1000)).to.be.revertedWith('Only SCPI owner is allowed to update share price')
         })
+
+        it('shall revert on changing share price of an unknown SCPI', async function() {
+            await expect(scpiNft.connect(scpi1).setPublicSharePrice(3,1000)).to.be.revertedWith('SCPI is not existing')
+        })
+
+        it('shall revert on changing share price to 0', async function() {
+            await expect(scpiNft.connect(scpi1).setPublicSharePrice(1,0)).to.be.revertedWith('Public price shall be greater than 0')
+        })
+
     })
 
     describe('Transfert tokens', function() {
@@ -189,6 +217,5 @@ describe('Test ScpiNFT', function() {
         it('safeBatchTransferFrom use is not allowed', async function() {
             await expect(scpiNft.connect(scpi1).safeBatchTransferFrom(scpi1.address,addr1.address,[1],[50],ethers.ZeroHash)).to.be.revertedWith('safeBatchTransferFrom not allowed')
         })
-
     })
 })
