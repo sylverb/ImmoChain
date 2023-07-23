@@ -1,16 +1,14 @@
 # ImmoChain  Project
 
-[TOC]
+Immochain est une plateforme décentralisée de vente et d'achat de parts de SCPI.
 
-Immochain est une plateforme de vente et d'achat de parts de SCPI.
-
-###Vidéo de présentation de l'application :
+### Vidéo de présentation de l'application :
 https://www.loom.com/share/9399881d4cf4416d8a5e1cfd69334dbf?sid=80970186-74a2-4a5b-961c-cdc3b1a25186
 
-###Déploiement de l'application sur réseau Mumbai :
+### Déploiement de l'application sur réseau Mumbai :
 https://immo-chain.vercel.app/
 
-###Tests
+### Tests
 ![](https://github.com/sylverb/ImmoChain/blob/main/images/Tests%20ScpiNFT.png?raw=true)
 ![](https://github.com/sylverb/ImmoChain/blob/main/images/Tests%20Marketplace.png?raw=true)
 ![](https://github.com/sylverb/ImmoChain/blob/main/images/Tests%20coverage.png?raw=true)
