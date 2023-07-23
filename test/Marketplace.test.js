@@ -582,5 +582,16 @@ describe('Test Marketplace', function() {
                 ethers.parseEther(((unitPrice50) / 100 * publicPrice).toString())
             )
         })
+
+        it('shall not be able to put more than 999 sell orders', async function() {
+            scpiId = 1
+            const unitPrice100 = 100
+            for (i = 0; i < 1000; i++) {
+                // Create sell orders
+                await marketplace.connect(user1).createSellOrder(scpiId,100,3)
+            }
+            await expect(marketplace.connect(user1).createSellOrder(scpiId,100,1)).to.be.revertedWith('Marketplace: This contract is designed to accept a maximum of 1000 sells orders')
+            initialMarketplaceBalance = await ethers.provider.getBalance(marketplace)
+        })
     })
 })

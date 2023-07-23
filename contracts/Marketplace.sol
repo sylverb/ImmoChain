@@ -133,6 +133,18 @@ contract Marketplace {
         // Require that the unit price of each token must be between 30 and 100% with a 5 points step
         require((unitPrice >= 30) && (unitPrice <= 100) && (unitPrice % 5) == 0, "Marketplace: price is a % between 30 and 100% with a 5 points step");
 
+        // Get the sell order set for the given NFT
+        OrdersSet storage nftOrders = orders[nftId];
+
+        uint256 index;
+        uint totalOrders;
+        while (index < nftOrders.priceIdTable.length) {
+            totalOrders+=nftOrders.ordersList[nftOrders.priceIdTable[index].price].length;
+            index++;
+        }
+
+        require(totalOrders < 1000, "Marketplace: This contract is designed to accept a maximum of 1000 sells orders");
+
         // Get the ERC1155 contract
         IERC1155 tokenContract = IERC1155(scpiNftContract);
 
@@ -147,8 +159,6 @@ contract Marketplace {
         userSellCounts[msg.sender][nftId] += noOfTokensForSale;
 
         // Create a new sell order
-        // Get the sell order set for the given NFT
-        OrdersSet storage nftOrders = orders[nftId];
 
         // Find the appropriate index to insert the new order price
         uint256 indexToInsert = 0;
