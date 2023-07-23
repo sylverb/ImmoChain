@@ -30,7 +30,6 @@ contract Marketplace {
     struct OrderPrice {
         uint256 price;
         uint256 total;
-        uint256 ordersByPriceId;
     }
 
     /**
@@ -40,7 +39,6 @@ contract Marketplace {
         mapping(address => SellOrder[]) ordersListBySeller;
         mapping(uint256 => SellOrder[]) ordersList;
         OrderPrice[] priceIdTable;
-        uint256 currentPriceId;
     }
 
     /*************************************************************/
@@ -165,7 +163,7 @@ contract Marketplace {
             for (uint256 i = nftOrders.priceIdTable.length - 1; i > indexToInsert; i--) {
                 nftOrders.priceIdTable[i] = nftOrders.priceIdTable[i - 1];
             }
-            nftOrders.priceIdTable[indexToInsert] = OrderPrice(unitPrice, noOfTokensForSale, nftOrders.currentPriceId++);
+            nftOrders.priceIdTable[indexToInsert] = OrderPrice(unitPrice, noOfTokensForSale);
         } else {
             nftOrders.priceIdTable[indexToInsert].total += noOfTokensForSale;
         }
@@ -352,48 +350,6 @@ contract Marketplace {
 
         // Delete orders that have been filled
         deleteFilledOrders(nftOrders, buyInfo.ordersToDelete);
-    }
-
-    function handleFilledBuyOrder(
-        uint256 nftId,
-        uint256 quantityToBuy,
-        uint256 unitPrice,
-        address seller,
-        address buyer,
-        uint256 publicPrice,
-        uint256 availablePayment,
-        OrderPrice storage priceTable
-    ) private {
-        uint256 buyPrice = (unitPrice * publicPrice * quantityToBuy) / 100;
-        userSellCounts[seller][nftId] -= quantityToBuy;
-        priceTable.total -= quantityToBuy;
-        require(availablePayment >= buyPrice, "Marketplace: Less ETH provided for the purchase");
-        availablePayment -= buyPrice;
-        sellersWallets[seller] += buyPrice;
-        ScpiNFT(scpiNftContract).safeTransferFrom(seller, buyer, nftId, quantityToBuy, "");
-        emit TokensSold(seller, buyer, nftId, quantityToBuy, buyPrice);
-    }
-
-    function handlePartiallyFilledBuyOrder(
-        uint256 nftId,
-        uint256 quantityToBuy,
-        uint256 unitPrice,
-        address seller,
-        address buyer,
-        uint256 publicPrice,
-        uint256 availablePayment,
-        OrderPrice storage priceTable
-    ) private {
-        uint256 buyPrice = (unitPrice * publicPrice * quantityToBuy) / 100;
-        require(availablePayment >= buyPrice, "Marketplace: Less ETH provided for the purchase");
-
-        userSellCounts[seller][nftId] -= quantityToBuy;
-        priceTable.total -= quantityToBuy;
-        availablePayment -= buyPrice;
-        sellersWallets[seller] += buyPrice;
-
-        ScpiNFT(scpiNftContract).safeTransferFrom(seller, buyer, nftId, quantityToBuy, "");
-        emit TokensSold(seller, buyer, nftId, quantityToBuy, buyPrice);
     }
 
     function deleteFilledOrders(OrdersSet storage nftOrders, uint256 ordersToDelete) private {

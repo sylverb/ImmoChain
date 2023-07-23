@@ -60,11 +60,10 @@ describe('Test Marketplace', function() {
             )
 
             // Check all orders
-/*            const allOrders = await marketplace.connect(user1).getOrders(1)
+            const allOrders = await marketplace.connect(user1).getOrderCountByPrice(1)
             expect(allOrders.length).to.equal(1)
-            expect(allOrders[0].seller).to.equal(user1.address)
-            expect(allOrders[0].quantity).to.equal(6000)
-            expect(allOrders[0].unitPrice).to.equal(85)*/
+            expect(allOrders[0].price).to.equal(85)
+            expect(allOrders[0].total).to.equal(6000)
 
             // Check orders for user1
             userOrder = await marketplace.connect(user1).getOrdersByAddress(1,user1.address)
@@ -109,6 +108,8 @@ describe('Test Marketplace', function() {
             await scpiNft.registerNewScpi(scpi1.address,'SCPI 1',10000,'URI',99)
             // Send some NFT to user1
             await scpiNft.connect(scpi1).safeTransferFrom(scpi1.address,user1.address,1,6000,ethers.ZeroHash)
+            // Send some NFT to user2
+            await scpiNft.connect(scpi1).safeTransferFrom(scpi1.address,user2.address,1,1000,ethers.ZeroHash)
         })
 
         it('shall allow user1 to cancel a sale order', async function() {
@@ -133,6 +134,45 @@ describe('Test Marketplace', function() {
                 user1.address,
                 1
             )
+
+            // Check that there is no order pending
+            userOrder = await marketplace.connect(user1).getOrdersByAddress(1,user1.address)
+            expect(userOrder.length).to.equal(0)
+        })
+
+        it('shall allow users to create several orders and cancel them', async function() {
+            // Create 2 sell order
+            await marketplace.connect(user1).createSellOrder(1,95,1000)
+            await marketplace.connect(user1).createSellOrder(1,90,100)
+            await marketplace.connect(user1).createSellOrder(1,90,100)
+            await marketplace.connect(user2).createSellOrder(1,90,100)
+
+            // Check order for user1
+            let userOrder = await marketplace.connect(user1).getOrdersByAddress(1,user1.address)
+            expect(userOrder[0].seller).to.equal(user1.address)
+            expect(userOrder[0].quantity).to.equal(1000)
+            expect(userOrder[0].unitPrice).to.equal(95)
+            expect(userOrder[1].seller).to.equal(user1.address)
+            expect(userOrder[1].quantity).to.equal(100)
+            expect(userOrder[1].unitPrice).to.equal(90)
+
+            // Cancel order
+            const findEvent = await marketplace.connect(user1).cancelSellOrder(1)
+            // Check receiving UnlistedFromSale event
+            await expect(findEvent)
+            .to.emit(
+                marketplace, 
+                'UnlistedFromSale'
+            )
+            .withArgs(
+                user1.address,
+                1
+            )
+
+            // Cancel 2nd and 3rd orders
+            await marketplace.connect(user2).cancelSellOrder(1)
+            await marketplace.connect(user1).cancelSellOrder(1)
+            await marketplace.connect(user1).cancelSellOrder(1)
 
             // Check that there is no order pending
             userOrder = await marketplace.connect(user1).getOrdersByAddress(1,user1.address)
@@ -286,6 +326,49 @@ describe('Test Marketplace', function() {
             // Check that there are no orders existing for the seller
             const userOrders = await marketplace.connect(user1).getOrdersByAddress(scpiId,user1.address)
             expect(userOrders.length).to.equal(0)
+        })
+
+        it('shall allow user2 to buy all shares sold by user1 (several orders)', async function() {
+            scpiId = 1
+            const unitPrice = 95
+
+            // Create 2 sell order
+            await marketplace.connect(user1).createSellOrder(scpiId,unitPrice,50)
+            await marketplace.connect(user1).createSellOrder(scpiId,100,2)
+
+            // user 2 create a buy order
+            const buyingSharesAmount = 51
+            const paidAmount = (50*unitPrice*publicPrice)/100+1*publicPrice
+            const findEvent = await marketplace.connect(user2).createBuyOrder(scpiId,buyingSharesAmount,{
+                value: ethers.parseEther(paidAmount.toString())
+              })
+
+            // Check receiving ListedForSale event
+            await expect(findEvent)
+            .to.emit(
+                marketplace, 
+                'TokensSold'
+            )
+            .withArgs(
+                user1.address,
+                user2.address,
+                scpiId,
+                50,
+                ethers.parseEther(((50*unitPrice*publicPrice)/100).toString())
+            )
+
+            // Check new NFT balance of user1 & 2
+            let balanceData = await scpiNft.balanceOf(user1.address,scpiId)
+            expect(balanceData).to.equal(6000-buyingSharesAmount)
+            balanceData = await scpiNft.balanceOf(user2.address,scpiId)
+            expect(balanceData).to.equal(buyingSharesAmount)
+
+            // Check that there one order existing for the seller
+            userOrders = await marketplace.connect(user1).getOrdersByAddress(scpiId,user1.address)
+            expect(userOrders.length).to.equal(1)
+            expect(userOrders[0].seller).to.equal(user1.address)
+            expect(userOrders[0].quantity).to.equal(1)
+            expect(userOrders[0].unitPrice).to.equal(100)
         })
 
         it('shall reject if user2 does not pay enough', async function() {
