@@ -4,9 +4,10 @@ pragma solidity 0.8.18;
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import "./ScpiNFT.sol";
 
-/**
- * @dev     Contract to implement buying and selling of ERC1155 SCPI shares
- */
+    /**
+     * @title Marketplace for ERC1155 SCPI shares
+     * @dev Implements buying and selling of ERC1155 SCPI shares
+     */
 
 contract Marketplace {
     /********************************************************/
@@ -14,20 +15,27 @@ contract Marketplace {
     /********************************************************/
     // We are storing data to be able to parse them by price set from the older to the newer
 
-    // SellOrder structure representing a sell order, containing the address of the seller, the quantity of tokens being sold, and the unit price of the tokens.
+    /**
+     * @dev Representing a sell order, containing the address of the seller, the quantity of tokens being sold, and the unit price of the tokens.
+     */
     struct SellOrder {
         address seller; // Address of the seller
         uint256 quantity; // Quantity of tokens being sold
         uint256 unitPrice; // Unit price of the tokens
     }
 
+    /**
+     * @dev Structure representing a price of an order and its related properties.
+     */
     struct OrderPrice {
         uint256 price;
         uint256 total;
         uint256 ordersByPriceId;
     }
 
-    // Set structure containing a mapping of seller addresses to indices in the keyList array, and an array of SellOrders.
+    /**
+     * @dev Representing a set of sell orders, containing a mapping of seller addresses to indices in the keyList array, and an array of SellOrders.
+     */
     struct OrdersSet {
         mapping(address => SellOrder[]) ordersListBySeller;
         mapping(uint256 => SellOrder[]) ordersList;
@@ -52,8 +60,10 @@ contract Marketplace {
     /********************************************************/
     /* Marketplace events                                   */
     /********************************************************/
-    // Event to indicate a token is listed for sale
-    event ListedForSale(
+    /**
+     * @dev Emitted when a token is listed for sale
+     */
+     event ListedForSale(
         // Account address of the token owner
         address account,
         // NFT id
@@ -64,7 +74,9 @@ contract Marketplace {
         uint256 unitPrice
     );
 
-    // Event to indicate a token is unlisted from sale
+    /**
+     * @dev Emitted when a token is unlisted from sale
+     */
     event UnlistedFromSale(
         // Account address of the token owner
         address account,
@@ -72,7 +84,9 @@ contract Marketplace {
         uint256 nftId
     );
 
-    // Event to indicate a token is sold
+    /**
+     * @dev Emitted when a token is sold
+     */
     event TokensSold(
         // Account address of the token seller
         address from,
@@ -86,23 +100,31 @@ contract Marketplace {
         uint256 puchaseAmount
     );
 
-    // We have to get the ScpiNFT contract address
+    /**
+     * @dev Sets the SCPI NFT contract address during deployment
+     * @param _scpiNftContract The address of the SCPI NFT contract
+     */
     constructor (address _scpiNftContract) {
         scpiNftContract = _scpiNftContract;
     }
 
+    /**
+     * @dev Receive function to accept ether
+     */
     receive() external payable {
     }
 
+    /**
+     * @dev Fallback function to accept ether
+     */
     fallback() external payable {
     }
 
     /**
-     * createSellOrder - Creates a sell order for the NFT specified by `nftId`.
-     *
-     * @param nftId          - The ID of the NFT to be sold.
-     * @param unitPrice      - The price of a single NFT in % of the public price.
-     * @param noOfTokensForSale - The number of NFTs being sold.
+     * @dev Creates a sell order for the NFT specified by `nftId`.
+     * @param nftId The ID of the NFT to be sold.
+     * @param unitPrice The price of a single NFT in % of the public price.
+     * @param noOfTokensForSale The number of NFTs being sold.
      */
 
     function createSellOrder(
@@ -166,8 +188,7 @@ contract Marketplace {
     }
 
     /**
-     * cancelSellOrder - Cancels the sell order created by the caller for a specific NFT token.
-     *
+     * @dev Cancels the last sell order created by the caller for a specific NFT token.
      * @param nftId ID of the NFT token to cancel the sell order for.
      */
     function cancelSellOrder(uint256 nftId) external {
@@ -216,12 +237,12 @@ contract Marketplace {
     }
 
     /**
-     * createBuyOrder - Create a buy order for an NFT token.
-     *
-     * @param nftId - unique identifier of the NFT token.
-     * @param noOfTokensToBuy - number of tokens the buyer wants to purchase.
+     * @notice Create a buy order for an NFT token.
+     * @dev Accepts ETH as payment, completes as many sell orders as possible starting from the lowest price,
+     *      and transfers the purchased tokens to the buyer.
+     * @param nftId The unique identifier of the NFT token.
+     * @param noOfTokensToBuy The number of tokens the buyer wants to purchase.
      */
-
     function createBuyOrder(
         uint256 nftId,
         uint256 noOfTokensToBuy
@@ -337,6 +358,13 @@ contract Marketplace {
         }
     }
 
+    /**
+     * @notice Remove the oldest sell order of a specific price from a seller's list of orders.
+     * @dev Used when an order is completely fulfilled.
+     * @param nftId The unique identifier of the NFT token.
+     * @param seller The address of the seller.
+     * @param price The unit price of the order to be removed.
+     */
     function deleteOldestOrder(uint256 nftId, address seller, uint256 price) private {
         SellOrder[] storage ordersList = orders[nftId].ordersListBySeller[seller];
         for (uint256 i = 0; i < ordersList.length; i++) {
@@ -351,6 +379,14 @@ contract Marketplace {
         }
     }
 
+    /**
+     * @notice Update the quantity of the oldest sell order of a specific price from a seller's list of orders.
+     * @dev Used when an order is partially fulfilled.
+     * @param nftId The unique identifier of the NFT token.
+     * @param seller The address of the seller.
+     * @param price The unit price of the order to be updated.
+     * @param newQuantity The new quantity for the order.
+     */
     function updateOldestOrder(uint256 nftId, address seller, uint256 price, uint256 newQuantity) private {
         SellOrder[] storage ordersList = orders[nftId].ordersListBySeller[seller];
         for (uint256 i = 0; i < ordersList.length; i++) {
@@ -362,9 +398,9 @@ contract Marketplace {
     }
 
     /**
-     * getOrders: This function retrieves the sell orders for the given token
-     * @param nftId unique identifier of the token
-     * @return An array of sell orders for the given token
+     * @notice Retrieve the number of sell orders for a given NFT, organized by ascending price.
+     * @param nftId The unique identifier of the NFT token.
+     * @return An array of sell orders for the given token.
      */
     function getOrderCountByPrice(uint256 nftId)
         external
@@ -377,10 +413,10 @@ contract Marketplace {
 
 
     /**
-     * getOrderByAddress: Get the SellOrder of a token for a given owner
-     * @param nftId unique identifier of the token
-     * @param seller address of the owner
-     * @return Sell order of a token for the given owner
+     * @notice Retrieve a list of all sell orders made by a specific address for a given NFT.
+     * @param nftId The unique identifier of the NFT token.
+     * @param seller The address of the seller.
+     * @return An array of sell orders made by the specified address for the given NFT.
      */
     function getOrdersByAddress(
         uint256 nftId,
@@ -392,17 +428,23 @@ contract Marketplace {
     }
 
     /**
-     * @notice  .
-     * @dev     .
+     * @notice Withdraw any earned ETH from selling tokens.
+     * @dev Ensures the caller has funds available to withdraw, and transfers the ETH to the caller's address.
      */
     function withdrawFunds() external {
         uint256 amount = sellersWallets[msg.sender];
         require(amount > 0, "No funds available to withdraw");
 
         sellersWallets[msg.sender] = 0;
-        payable(msg.sender).transfer(amount);
+        (bool result, ) = msg.sender.call{value: amount}("");
+        require (result,"withdraw failed");
     }
 
+    /**
+     * @notice Check the balance of earned ETH from selling tokens, but not yet withdrawn.
+     * @dev Returns the balance of the caller's address in the sellersWallets mapping.
+     * @return The balance of the caller's address.
+     */
     function getBalanceInfo() external view returns (uint256) {
         return sellersWallets[msg.sender];
     }

@@ -30,6 +30,9 @@ import "@openzeppelin/contracts/access/Ownable.sol";
  */
 
 contract ScpiNFT is ERC1155, Ownable {
+    using Counters for Counters.Counter;
+
+    // Structure to store SCPI related data
     struct ScpiInfo {
         string  name;
         string  uri;
@@ -38,18 +41,42 @@ contract ScpiNFT is ERC1155, Ownable {
         address scpiAddress;
     }
 
-    using Counters for Counters.Counter;
+    // To keep track of tokenIds
     Counters.Counter private _tokenIds;
+
+    // Address of the marketplace
     address _marketplaceAddress;
+
+    // Mapping to store ScpiInfo for each tokenId
     mapping(uint256 => ScpiInfo) private _scpiInfos;
 
+    /**
+     * @dev Constructor to initialize the contract.
+     */
     constructor() ERC1155("") {}
 
+    /* Events */
+    /**
+    * @dev Emitted when owner registered a new SCPI
+    */
+    event RegisterNewScpi(uint256 companyId, string name, uint publicPrice, string uri, uint amount, address recipient);
+
+    /**
+    * @dev Emitted when SCPI is changing the shares public price
+    */
+    event SetNewSharePrice(uint256 companyId, uint newPrice);
+
+    /**
+     * @notice Function to set the marketplace address
+     * @dev Only callable by contract owner
+     * @param _mpAddress Address of the marketplace
+     */
     function setMarketplaceAddress(address _mpAddress) external onlyOwner {
         _marketplaceAddress = _mpAddress;
         setApprovalForAll(_marketplaceAddress,true);
     }
 
+    // Internal functions to set SCPI attributes for a given tokenId
     function _setScpiURI(
         uint256 tokenId,
         string memory _scpiURI
@@ -86,14 +113,15 @@ contract ScpiNFT is ERC1155, Ownable {
     }
 
     /**
-     * @dev     Register a new SCPI with wanted amount of shares, and send them to specified recipient
+     * @notice Register a new SCPI with specified amount of shares, and send them to specified recipient
      *          The URI for this SCPI is also specified here.
-     * @param   _recipient  .
-     * @param   _scpiName  .
-     * @param   _sharesAmount  .
-     * @param   _scpiURI  .
-     * @param   _publicPrice  .
-     * @return  uint256  .
+     * @dev Only callable by contract owner
+     * @param _recipient The recipient address for the SCPI shares
+     * @param _scpiName The name of the SCPI
+     * @param _sharesAmount The number of shares for the SCPI
+     * @param _scpiURI The URI for the SCPI
+     * @param _publicPrice The public price for the SCPI shares
+     * @return newItemId The token id of the new SCPI
      */
     function registerNewScpi(
         address         _recipient,
@@ -115,12 +143,13 @@ contract ScpiNFT is ERC1155, Ownable {
     }
 
     /**
-     * @dev     Set new price for a share. Only SCPI is allowed to change the price
+     * @notice  Set new price for a share. Only SCPI is allowed to change the price
      *          TODO : Inform the marketplace smartcontract about the price change
      *          to trigger some sell cancel if sellers wants to cancel their sale
      *          in case of price change.
-     * @param   _tokenId  .
-     * @param   _publicPrice  .
+     * @dev Only callable by the SCPI owner
+     * @param _tokenId The token id of the SCPI
+     * @param _publicPrice The new public price
      */
     function setPublicSharePrice(
         uint _tokenId,
@@ -134,9 +163,9 @@ contract ScpiNFT is ERC1155, Ownable {
     }
 
     /**
-     * @dev     Get public price for a share.
-     * @param   _tokenId  .
-     * @return  uint256  .
+     * @notice Get the public price for a SCPI
+     * @param _tokenId The token id of the SCPI
+     * @return The public price for the SCPI
      */
     function getPublicSharePrice(
         uint _tokenId
@@ -146,25 +175,25 @@ contract ScpiNFT is ERC1155, Ownable {
     }
 
     /**
-     * @notice  .
-     * @dev     .
-     * @param   _tokenId  .
-     * @return  string  .
+     * @notice Get the URI for a SCPI
+     * @param _tokenId The token id of the SCPI
+     * @return The URI for the SCPI
      */
     function uri(uint256 _tokenId) public view override returns (string memory) {
         return _scpiInfos[_tokenId].uri;
     }
 
     /**
-     * @dev     We override safeTransferFrom to take into account our specificities :
+     * @notice  Override for safeTransferFrom to take into account our specificities :
      *          - marketplace shall be able to transfer from any address to any other address
      *          - scpi shall be able to send the tokens it owns to any address
      *          This function will allow to transfer one SCPI tokens from an address to another.
-     * @param   from   send tokens from this address
-     * @param   to     send tokens to this address
-     * @param   id     id of the scpi
-     * @param   amount amount of token to send
-     * @param   data   data
+     * @dev Only allows marketplace to transfer tokens from any address, SCPI owner to transfer their own tokens
+     * @param from The sender address
+     * @param to The recipient address
+     * @param id The token id
+     * @param amount The amount of tokens
+     * @param data Additional data
      */
     function safeTransferFrom(
         address from,
@@ -179,6 +208,9 @@ contract ScpiNFT is ERC1155, Ownable {
         _safeTransferFrom(from, to, id, amount, data);
     }
 
+    /**
+     * @notice Disallow batch transfers
+     */
     function safeBatchTransferFrom(
         address,// from,
         address,// to,
@@ -188,8 +220,4 @@ contract ScpiNFT is ERC1155, Ownable {
     ) public virtual override {
         revert("safeBatchTransferFrom not allowed");
     }
-
-    /* Events */
-    event RegisterNewScpi(uint256 companyId, string name, uint publicPrice, string uri, uint amount, address recipient);
-    event SetNewSharePrice(uint256 companyId, uint newPrice);
 }
