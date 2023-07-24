@@ -14,7 +14,7 @@ il faut mettre des valeurs réelles uniquement pour pouvoir déployer sur mumbai
 - Backend :
 ```
 npm install
-npx hardhat deploy --network localhost
+npx hardhat node
 ```
 
 pour mettre en place quelques SCPI et quelques ordres de vente
