@@ -4,12 +4,12 @@ Immochain est une plateforme décentralisée de vente et d'achat de parts de SCP
 
 ### Installation
 
-Créer un fichier .env
+Créez un fichier .env
 ```
 API_URL = "https://polygon-mumbai.g.alchemy.com/v2/..."
 PRIVATE_KEY = "votre_clé_privée"
 ```
-il faut mettre des valeur réelles uniquement pour pouvoir déployer sur mumbai, sinon vous pouvez les laisser vides
+il faut mettre des valeurs réelles uniquement pour pouvoir déployer sur mumbai, sinon vous pouvez les laisser vides
 
 - Backend :
 ```
