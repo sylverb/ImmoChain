@@ -2,6 +2,33 @@
 
 Immochain est une plateforme décentralisée de vente et d'achat de parts de SCPI.
 
+### Installation
+
+Créer un fichier .env
+```
+API_URL = "https://polygon-mumbai.g.alchemy.com/v2/..."
+PRIVATE_KEY = "votre_clé_privée"
+```
+il faut mettre des valeur réelles uniquement pour pouvoir déployer sur mumbai, sinon vous pouvez les laisser vides
+
+- Backend :
+```
+npm install
+npx hardhat deploy --network localhost
+```
+
+pour mettre en place quelques SCPI et quelques ordres de vente
+```
+npx hardhat run scripts/demoConfiguration.js --network localhost
+```
+
+- Frontend :
+```
+cd immochain-app
+yarn install
+npx vite
+```
+
 ### Vidéo de présentation de l'application :
 https://www.loom.com/share/9399881d4cf4416d8a5e1cfd69334dbf?sid=80970186-74a2-4a5b-961c-cdc3b1a25186
 
