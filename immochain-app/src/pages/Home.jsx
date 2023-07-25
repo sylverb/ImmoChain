@@ -13,16 +13,22 @@ const Home = () => {
   const fetchScpi = async () => {
     setIsLoading(true);
     const data = await getScpiInfos();
-    const newData = data.filter((scpi) => !scpiList.some((prevScpi) => prevScpi.id === scpi.id));
-
-    setScpiList((prevScpiList) => [...prevScpiList, ...newData]);
+    
+    setScpiList((prevScpiList) => {
+      // On fait le filtre en se basant sur l'état précédent
+      const newData = data.filter((scpi) => !prevScpiList.some((prevScpi) => prevScpi.id === scpi.id));
+      return [...prevScpiList, ...newData]; // On retourne la nouvelle liste
+    });
     setIsLoading(false);
     setHasScpiListChanged(true);
   }
 
   useEffect(() => {
-    if(scpiNftContract) fetchScpi();
-  }, [address, scpiNftContract, marketplaceContract]);
+    if(scpiNftContract) {
+      fetchScpi(); 
+      fetchScpi();
+    }
+    }, [address, scpiNftContract, marketplaceContract]);
 
   useEffect(() => {
     if (hasScpiListChanged) {
