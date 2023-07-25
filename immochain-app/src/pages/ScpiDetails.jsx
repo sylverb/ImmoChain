@@ -125,7 +125,7 @@ const ScpiDetails = () => {
     }
 
     // Sinon, retournez le prix minimum pour le nombre de parts souhaitées
-    return totalPrice/100;
+    return parseFloat((totalPrice/100).toFixed(10));
   }
 
   const dynamicTitlePart = () => {
@@ -213,7 +213,7 @@ const ScpiDetails = () => {
                     {salesOrders.map((order, index) => (
                       <tr key={index}>
                         <td className="font-epilogue font-normal text-[16px] text-[#b2b3bd] text-center">
-                          {(order.unitPrice * state.publicPrice / 100)} ETH
+                          {parseFloat((order.unitPrice * state.publicPrice / 100).toFixed(10))} ETH
                         </td>
                         <td className="font-epilogue font-normal text-[16px] text-[#b2b3bd] text-center">
                           {order.quantity}
@@ -263,7 +263,7 @@ const ScpiDetails = () => {
                       {Object.values(myOrders).map((order, index) => (
                       <tr key={index}>
                         <td className="font-epilogue font-normal text-[16px] text-[#b2b3bd] text-center">
-                          {(order.unitPrice * state.publicPrice / 100)} ETH
+                          {parseFloat((order.unitPrice / 100 * state.publicPrice).toFixed(10))} ETH
                         </td>
                         <td className="font-epilogue font-normal text-[16px] text-[#b2b3bd] text-center">
                           {order.quantity}
