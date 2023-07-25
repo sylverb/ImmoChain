@@ -718,11 +718,6 @@ export const marketplaceContractAbi = [
             "internalType": "uint256",
             "name": "total",
             "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "ordersByPriceId",
-            "type": "uint256"
           }
         ],
         "internalType": "struct Marketplace.OrderPrice[]",
