@@ -55,6 +55,8 @@ export const StateContextProvider = ({ children }) => {
       scpiAddress: event.data.recipient
     }));
 
+    console.log("getScpiInfos result : "+JSON.stringify(parsedInfos))
+
     return parsedInfos;
   }
 
