@@ -3,7 +3,7 @@ require("@nomicfoundation/hardhat-ethers");
 require("hardhat-deploy");
 require("hardhat-deploy-ethers");
 require("dotenv").config();
-const { API_URL, PRIVATE_KEY } = process.env;
+const { API_URL_MUMBAI , API_URL_SEPOLIA, API_URL_GOERLI, PRIVATE_KEY } = process.env;
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
@@ -19,7 +19,15 @@ module.exports = {
   networks: {
     hardhat: {},
     mumbai: {
-      url: API_URL,
+      url: API_URL_MUMBAI,
+      accounts: [`0x${PRIVATE_KEY}`],
+    },
+    goerli: {
+      url: API_URL_GOERLI,
+      accounts: [`0x${PRIVATE_KEY}`],
+    },
+    sepolia: {
+      url: API_URL_SEPOLIA,
       accounts: [`0x${PRIVATE_KEY}`],
     },
   },

@@ -19,7 +19,7 @@ const Navbar = () => {
   const [, switchNetwork] = useNetwork();
 
   const chainId = process.env.NODE_ENV === 'production'
-  ? ChainId.Mumbai
+  ? ChainId.Goerli
   : ChainId.Hardhat;
 
   const fetchBalance = async () => {

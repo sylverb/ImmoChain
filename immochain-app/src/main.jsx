@@ -11,7 +11,7 @@ import './index.css';
 const root = ReactDOM.createRoot(document.getElementById('root'));
 console.log("APP_ENV = "+process.env.NODE_ENV)
 const chainId = process.env.NODE_ENV === 'production'
-  ? ChainId.Mumbai
+  ? ChainId.Goerli
   : ChainId.Hardhat;
 console.log("NODE_ENV chainId = "+chainId)
 root.render(

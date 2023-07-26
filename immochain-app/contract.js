@@ -1,5 +1,5 @@
 export const scpiNftContractAddress = process.env.NODE_ENV === 'production'
-  ? '0xF313130b12734176CE07a3f2b26551883Dad2ab6' // mumbai testnet
+  ? '0x1040Ad4D125e545b88f07E59cec0507C44F04D76' // goerli testnet
   : '0x5FbDB2315678afecb367f032d93F642f64180aa3'; // local test network
 export const scpiNftContractAbi = [
   {
@@ -524,7 +524,7 @@ export const scpiNftContractAbi = [
   }
 ];
 export const marketplaceContractAddress = process.env.NODE_ENV === 'production'
-  ? '0xCDA43d43336ff6a31E4743190d795C8A2cd01874' // mumbai testnet
+  ? '0xc1b108397f509C94055c4634dc2C0Ba9ea4e879b' // goerli testnet
   : '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512'; // local test network
 
 export const marketplaceContractAbi = [
