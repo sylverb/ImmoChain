@@ -14,6 +14,9 @@ export const StateContextProvider = ({ children }) => {
   const { contract : scpiNftContract } = useContract(scpiNftContractAddress, scpiNftContractAbi);
   const { contract : marketplaceContract } = useContract(marketplaceContractAddress, marketplaceContractAbi);
 
+  const { mutateAsync: createOrder } = useContractWrite(marketplaceContract, 'createSellOrder');
+  const { mutateAsync: cancelOrder } = useContractWrite(marketplaceContract, 'cancelSellOrder');
+
   const address = useAddress();
   const connect = useMetamask();
   const disconnect = useDisconnect();
@@ -60,11 +63,11 @@ export const StateContextProvider = ({ children }) => {
     return parsedInfos;
   }
 
-  const getSharesBalance = async (address, pid) => {
+  const getSharesBalance = async (_address, pid) => {
     try {
-      console.log("getSharesBalance address ="+address+" / pid = "+pid)
+      console.log("getSharesBalance address ="+_address+" / pid = "+pid)
       const balance = await scpiNftContract.call('balanceOf',
-      address, // address to get balance of
+      _address, // address to get balance of
       pid // id of the SCPI
       );
       console.log("getSharesBalance  ="+balance)
@@ -99,10 +102,11 @@ export const StateContextProvider = ({ children }) => {
   
   const createSaleOrder = async (id,price,quantity) => {
     try {
-     await marketplaceContract.call('createSellOrder',
+      await createOrder([
           id, // id of the SCPI
           price, // price per share
           quantity // number of shares to sell
+        ]
       );
 
       console.log("createSellOrder call success")
@@ -151,12 +155,12 @@ export const StateContextProvider = ({ children }) => {
     return parsedSalesOrders;
   }
 
-  const getOrdersByAddress = async (id,address) => {
+  const getOrdersByAddress = async (id,_address) => {
     const parsedSalesOrders = [];
     try {
       const datas = await marketplaceContract.call('getOrdersByAddress',
           id, // id of the SCPI
-          address
+          _address
       );
 
       console.log("getOrdersByAddress datas = "+datas);
@@ -176,9 +180,13 @@ export const StateContextProvider = ({ children }) => {
 
   const cancelSaleOrders = async (id) => {
     try {
-     await marketplaceContract.call('cancelSellOrder',
-          id, // id of the SCPI
+      await cancelOrder([
+        id // id of the SCPI
+      ]
       );
+/*     await marketplaceContract.call('cancelSellOrder',
+          id, // id of the SCPI
+      );*/
 
       console.log("cancelSellOrder call success")
     } catch (error) {
@@ -222,11 +230,11 @@ export const StateContextProvider = ({ children }) => {
         transferScpiShares,
         getSharesBalance,
         getScpiInfos,
-        createSaleOrder,
+        createOrder: createSaleOrder,
         createBuyOrder,
         getOrdersByAddress,
         getOrderCountByPrice,
-        cancelSaleOrders,
+        cancelOrder: cancelSaleOrders,
         getMarketplaceBalance,
         withdrawFunds
       }}

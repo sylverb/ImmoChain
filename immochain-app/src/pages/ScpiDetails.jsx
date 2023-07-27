@@ -7,7 +7,7 @@ import { useAddress } from '@thirdweb-dev/react';
 
 const ScpiDetails = () => {
   const { state } = useLocation();
-  const { getOrderCountByPrice, getOrdersByAddress, createSaleOrder, cancelSaleOrders, createBuyOrder, scpiNftContract, marketplaceContract, getSharesBalance, address, transferScpiShares } = useStateContext();
+  const { getOrderCountByPrice, getOrdersByAddress, createOrder, cancelOrder, createBuyOrder, scpiNftContract, marketplaceContract, getSharesBalance, address, transferScpiShares } = useStateContext();
 
   const [isLoading, setIsLoading] = useState(false);
   const [sharesAmount, setSharesAmount] = useState();
@@ -19,6 +19,8 @@ const ScpiDetails = () => {
   const [balance, setBalance] = useState();
 
   const userAddress = useAddress(); // get connected wallet address
+  const [isMounted, setIsMounted] = useState(false);
+  const navigate = useNavigate();
 
   const fetchSalesOrders = async () => {
     const orders = await getOrderCountByPrice(state.pId);
@@ -39,20 +41,31 @@ const ScpiDetails = () => {
   }
 
   useEffect(() => {
-    if(marketplaceContract) {
+    setIsMounted(true);
+  }, [])
+
+  useEffect(() => {
+    if(userAddress && marketplaceContract) {
       fetchSalesOrders();
       fetchMyOrders();
     }
   }, [marketplaceContract,userAddress])
 
   useEffect(() => {
-    if(scpiNftContract) fetchOwnedShares();
-  }, [scpiNftContract],userAddress)
+    if(userAddress && scpiNftContract) fetchOwnedShares();
+  }, [scpiNftContract,userAddress])
+
+  useEffect(() => {
+    if(isMounted)
+    {
+//      navigate('/');
+    }
+  }, [userAddress])
 
   const handleCreateShareSale = async () => {
     setIsLoading(true);
 
-    await createSaleOrder(state.pId, sellPrice, sharesAmount); 
+    await createOrder(state.pId, sellPrice, sharesAmount); 
 
     setIsLoading(false);
 
@@ -62,7 +75,7 @@ const ScpiDetails = () => {
   const handleCancelShareSale = async () => {
     setIsLoading(true);
 
-    await cancelSaleOrders(state.pId); 
+    await cancelOrder(state.pId); 
 
     setIsLoading(false);
 

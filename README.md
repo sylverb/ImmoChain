@@ -6,7 +6,9 @@ Immochain est une plateforme décentralisée de vente et d'achat de parts de SCP
 
 Créez un fichier .env
 ```
-API_URL = "https://polygon-mumbai.g.alchemy.com/v2/..."
+API_URL_MUMBAI = 'https://polygon-mumbai.g.alchemy.com/v2/...'
+API_URL_SEPOLIA = 'https://sepolia.infura.io/v3/...'
+API_URL_GOERLI = 'https://goerli.infura.io/v3/...'
 PRIVATE_KEY = "votre_clé_privée"
 ```
 il faut mettre des valeurs réelles uniquement pour pouvoir déployer sur mumbai, sinon vous pouvez les laisser vides

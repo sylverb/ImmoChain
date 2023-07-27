@@ -26,7 +26,6 @@ const Home = () => {
   useEffect(() => {
     if(scpiNftContract) {
       fetchScpi(); 
-      fetchScpi();
     }
     }, [address, scpiNftContract, marketplaceContract]);
 
