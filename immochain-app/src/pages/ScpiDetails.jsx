@@ -7,7 +7,7 @@ import { useAddress } from '@thirdweb-dev/react';
 
 const ScpiDetails = () => {
   const { state } = useLocation();
-  const { getOrderCountByPrice, getOrdersByAddress, createOrder, cancelOrder, createBuyOrder, scpiNftContract, marketplaceContract, getSharesBalance, address, transferScpiShares } = useStateContext();
+  const { getOrderCountByPrice, getOrdersByAddress, createOrder, cancelOrder, buyOrder, scpiNftContract, marketplaceContract, getSharesBalance, address, transferScpiShares } = useStateContext();
 
   const [isLoading, setIsLoading] = useState(false);
   const [sharesAmount, setSharesAmount] = useState();
@@ -85,7 +85,7 @@ const ScpiDetails = () => {
   const handleBuyShareSale = async () => {
     setIsLoading(true);
 
-    await createBuyOrder(state.pId,buySharesAmount,findPrice(buySharesAmount));
+    await buyOrder(state.pId,buySharesAmount,findPrice(buySharesAmount));
 
     setIsLoading(false);
 

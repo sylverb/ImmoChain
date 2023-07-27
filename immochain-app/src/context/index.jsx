@@ -16,6 +16,7 @@ export const StateContextProvider = ({ children }) => {
 
   const { mutateAsync: createOrder } = useContractWrite(marketplaceContract, 'createSellOrder');
   const { mutateAsync: cancelOrder } = useContractWrite(marketplaceContract, 'cancelSellOrder');
+  const { mutateAsync: buyOrder } = useContractWrite(marketplaceContract, 'createBuyOrder');
 
   const address = useAddress();
   const connect = useMetamask();
@@ -119,10 +120,10 @@ export const StateContextProvider = ({ children }) => {
   const createBuyOrder = async (id,quantity,price) => {
     try {
      console.log("creatBuyOrder : "+ethers.utils.parseEther(price.toString()))
-     await marketplaceContract.call('createBuyOrder',
+     await buyOrder([
           id, // id of the SCPI
           quantity, // number of shares to buy
-          { value: ethers.utils.parseEther(price.toString()) }
+          { value: ethers.utils.parseEther(price.toString()) }]
       );
 
       console.log("createSellOrder call success")
@@ -231,7 +232,7 @@ export const StateContextProvider = ({ children }) => {
         getSharesBalance,
         getScpiInfos,
         createOrder: createSaleOrder,
-        createBuyOrder,
+        buyOrder: createBuyOrder,
         getOrdersByAddress,
         getOrderCountByPrice,
         cancelOrder: cancelSaleOrders,
